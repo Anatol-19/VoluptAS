@@ -2,7 +2,7 @@ import sys
 import os
 
 # Добавляем корневую директорию проекта в PYTHONPATH
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/integrations', '..'))
 sys.path.append(project_root)
 
 from src.integrations.zoho.portal_data import user_manager, task_status_manager, defect_status_manager

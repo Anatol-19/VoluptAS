@@ -226,7 +226,7 @@ class TestPlanGenerator:
             dev_list = format_owners(owners, "Dev")
             defects_table += (
                 f"| [{defect['key']}]({defect['link']['web']['url']}) - {defect['title']} | "
-                f"{defect.get('priority', 'Не указан')} | {defect.get('severity', 'Не указана')} | "
+                f"{defect.get('priority', 'Не указан')} | {defect.get('severity', {}).get('type', 'S5')} | "
                 f"{qa_list} | {dev_list} | {defect['status']['type']} |\n"
             )
         return header + defects_table
