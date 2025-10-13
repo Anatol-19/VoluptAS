@@ -5,9 +5,9 @@ import os
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(project_root)
 
-from services.ZOHO.portal_data import user_manager, task_status_manager, defect_status_manager
-from services.ZOHO.Zoho_api_client import ZohoAPI
-from scripts.Release_Test_Plan.TestPlanGenerator import TestPlanGenerator
+from src.integrations.zoho.portal_data import user_manager, task_status_manager, defect_status_manager
+from src.integrations.zoho.Zoho_api_client import ZohoAPI
+from src.services.TestPlanGenerator import TestPlanGenerator
 
 
 def get_tasks_by_milestone_name(milestone__name: str) -> list[dict]:

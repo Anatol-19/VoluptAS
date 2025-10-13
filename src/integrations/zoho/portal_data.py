@@ -1,6 +1,6 @@
-from TaskStatus import TaskStatusManager
-from DefectStatus import DefectStatusManager
-from User import UserManager
+from .TaskStatus import TaskStatusManager
+from .DefectStatus import DefectStatusManager
+from .User import UserManager
 
 def create_task_status_manager():
     """

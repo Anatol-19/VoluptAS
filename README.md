@@ -80,9 +80,53 @@ _(будет определён при старте разработки)_
 
 ## Документация
 
-- [Техническое задание](docs/TZ.md)
-- [Артефакты разработки](docs/Development_Artifacts.md)
-- [Структура импорта](docs/Import_Structure.md)
+- [Техническое задание](docs/TZ/)
+- [Интеграции (MATURE CODE)](docs/INTEGRATIONS.md) - Google Sheets, Zoho API, TestPlanGenerator
+
+## Конфигурация
+
+### Zoho API
+
+Файл `src/integrations/zoho/config_zoho.env` уже настроен:
+- ✅ Portal: vrbgroup
+- ✅ Region: com
+- ✅ Токены действительны
+
+⚠️ **НЕ КОММИТИТЬ** `.env` файлы! (уже в .gitignore)
+
+### Google Sheets
+
+Для использования Google Sheets API:
+1. Создайте service account в Google Cloud Console
+2. Скачайте JSON credentials
+3. Сохраните как `service_account.json` (уже в .gitignore)
+
+## Структура проекта
+
+```
+VoluptAS/
+├── src/
+│   ├── models/              # ✅ SQLAlchemy модели
+│   │   ├── functional_item.py
+│   │   └── user.py
+│   ├── integrations/        # ✅ MATURE CODE (из ITS_Scripts)
+│   │   ├── google/          # Google Sheets API
+│   │   └── zoho/            # Zoho Projects API
+│   ├── services/            # ✅ MATURE CODE
+│   │   └── TestPlanGenerator.py
+│   ├── db/                  # 🟡 В процессе
+│   ├── import/              # ⏳ TODO - Excel → SQLite
+│   ├── export/              # ⏳ TODO - экспорт данных
+│   └── ui/                  # ⏳ TODO - PyQt6 UI
+├── data/
+│   └── import/
+│       └── VoluptaS_VRS_reference.xlsx
+├── docs/
+│   ├── TZ/                  # Техническое задание
+│   └── INTEGRATIONS.md      # Документация интеграций
+├── requirements.txt         # ✅ Зависимости
+└── .gitignore               # ✅ Защита секретов
+```
 
 ## Лицензия
 

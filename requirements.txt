@@ -19,6 +19,10 @@ matplotlib==3.8.2
 gspread==5.12.3
 google-auth==2.25.2
 google-auth-oauthlib==1.2.0
+numpy==1.26.2
+
+# Zoho API integration
+requests==2.31.0
 
 # BDD/Gherkin
 behave==1.2.6
