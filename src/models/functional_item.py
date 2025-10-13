@@ -5,11 +5,20 @@
 Основана на реальной структуре из VoluptaS VRS.xlsx
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from src.db.database import Base
 from typing import Optional, List, Dict
+
+
+# Таблица для N:M связей между функциональными элементами
+functional_item_relations = Table(
+    'functional_item_relations',
+    Base.metadata,
+    Column('item_id', Integer, ForeignKey('functional_items.id'), primary_key=True),
+    Column('related_item_id', Integer, ForeignKey('functional_items.id'), primary_key=True)
+)
 
 
 class FunctionalItem(Base):
@@ -43,6 +52,10 @@ class FunctionalItem(Base):
     # Подробное описание функционала
     
     # === ИЕРАРХИЯ ===
+    # Иерархическая связь (parent-child)
+    parent_id = Column(Integer, ForeignKey('functional_items.id'), nullable=True, index=True)
+    
+    # Старые поля для обратной совместимости
     module = Column(String(200), nullable=True, index=True)
     epic = Column(String(200), nullable=True, index=True)
     feature = Column(String(200), nullable=True, index=True)
@@ -73,10 +86,22 @@ class FunctionalItem(Base):
     consulted_ids = Column(Text, nullable=True)  # JSON array
     informed_ids = Column(Text, nullable=True)  # JSON array
     
-    # Relationships
+    # Relationships для ответственных
     responsible_qa = relationship("User", foreign_keys=[responsible_qa_id])
     responsible_dev = relationship("User", foreign_keys=[responsible_dev_id])
     accountable = relationship("User", foreign_keys=[accountable_id])
+    
+    # Иерархические relationships
+    parent = relationship("FunctionalItem", remote_side=[id], backref="children")
+    
+    # N:M relationships для связанных элементов
+    related_items = relationship(
+        "FunctionalItem",
+        secondary=functional_item_relations,
+        primaryjoin=id == functional_item_relations.c.item_id,
+        secondaryjoin=id == functional_item_relations.c.related_item_id,
+        backref="related_to"
+    )
     
     # === ПОКРЫТИЕ ТЕСТАМИ ===
     test_cases_linked = Column(Text, nullable=True)  # JSON array или CSV

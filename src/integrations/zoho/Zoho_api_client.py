@@ -31,8 +31,22 @@ class ZohoAPI:
 
 
     def __init__(self):
-        env_path = os.path.join(os.path.dirname(__file__), "config_zoho.env")
-        load_dotenv(env_path)  # Загружаем переменные из config_zoho.env
+        # Ищем config сначала в credentials, потом в текущей директории
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        env_path = os.path.join(project_root, "credentials", "zoho.env")
+        
+        if not os.path.exists(env_path):
+            # Fallback на старое расположение
+            env_path = os.path.join(os.path.dirname(__file__), "config_zoho.env")
+        
+        if not os.path.exists(env_path):
+            raise FileNotFoundError(
+                f"Файл конфигурации Zoho не найден. Ожидается:\n"
+                f"  - {os.path.join(project_root, 'credentials', 'zoho.env')}\n"
+                f"  - или {os.path.join(os.path.dirname(__file__), 'config_zoho.env')}"
+            )
+        
+        load_dotenv(env_path)  # Загружаем переменные из zoho.env
 
         self.client_id = os.getenv("ZOHO_CLIENT_ID")
         self.client_secret = os.getenv("ZOHO_CLIENT_SECRET")
@@ -168,17 +182,26 @@ class ZohoAPI:
         """
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         env_path = os.path.join(project_root, "credentials", "zoho.env")
-        with open(env_path, "r") as file:
-            lines = file.readlines()
+        
+        if not os.path.exists(env_path):
+            # Fallback на старое расположение
+            env_path = os.path.join(os.path.dirname(__file__), "config_zoho.env")
+        
+        try:
+            with open(env_path, "r", encoding="utf-8") as file:
+                lines = file.readlines()
 
-        with open(env_path, "w") as file:
-            for line in lines:
-                if line.startswith("ZOHO_ACCESS_TOKEN="):
-                    file.write(f"ZOHO_ACCESS_TOKEN={access_token}\n")
-                elif line.startswith("ZOHO_REFRESH_TOKEN="):
-                    file.write(f"ZOHO_REFRESH_TOKEN={refresh_token}\n")
-                else:
-                    file.write(line)
+            with open(env_path, "w", encoding="utf-8") as file:
+                for line in lines:
+                    if line.startswith("ZOHO_ACCESS_TOKEN="):
+                        file.write(f"ZOHO_ACCESS_TOKEN={access_token}\n")
+                    elif line.startswith("ZOHO_REFRESH_TOKEN="):
+                        file.write(f"ZOHO_REFRESH_TOKEN={refresh_token}\n")
+                    else:
+                        file.write(line)
+            print(f"✅ Токены сохранены в: {env_path}")
+        except Exception as e:
+            print(f"❌ Ошибка сохранения токенов: {e}")
 
 
     def send_request(self, url: str, params: dict = None) -> dict | None:
@@ -296,7 +319,12 @@ class ZohoAPI:
         params = {}
         if search_term:
             params["search"] = search_term
-        return self.send_request(url).get("users", [])
+        
+        response = self.send_request(url, params)
+        if response is None:
+            print(f"❌ Не удалось получить пользователей. Проверьте права доступа.")
+            return []
+        return response.get("users", [])
 
 
     def get_tasks_by_milestone(self, milestone_id: str) -> list[dict]:
