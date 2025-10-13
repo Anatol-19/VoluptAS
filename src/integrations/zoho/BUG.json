@@ -1,0 +1,78 @@
+{
+    "updated_time_long": 1744886830701,
+    "comment_count": "0",
+    "updated_time": "04-17-2025",
+    "assignee_zpuid": "1209515000013186007",
+    "flag": "Internal",
+    "updated_time_format": "04-17-2025 12:47:10 PM",
+    "link": {
+        "timesheet": {
+            "url": "https://projectsapi.zoho.com/restapi/portal/vrbgroup/projects/1209515000001238053/bugs/1209515000014616207/logs/"
+        },
+        "web": {
+            "url": "https://projects.zoho.com/portal/vrbgroup#buginfo/1209515000001238053/1209515000014616207"
+        },
+        "self": {
+            "url": "https://projectsapi.zoho.com/restapi/portal/vrbgroup/projects/1209515000001238053/bugs/1209515000014616207/"
+        }
+    },
+    "description": "<div>не записываются настройки альтов для картинок в админке /seo/alt/, нет реакции на нажатие кнопки SAVE DATA<br></div>",
+    "title": "[PROD] не записываются настройки альтов для картинок в админке /seo/alt/",
+    "assignee_name": "Anton Kazakoff",
+    "reporter_id": "804464244",
+    "id": 1209515000014616207,
+    "has_log_hours": "false",
+    "affected_milestone": {
+        "name": "Relese #19",
+        "id": "1209515000014447288"
+    },
+    "escalation_level": "0",
+    "key": "EA1-I1155",
+    "assignee_id": "868210973",
+    "created_time_long": 1744886830447,
+    "severity": {
+        "id": "1209515000006833131",
+        "type": "Other"
+    },
+    "created_time": "04-17-2025",
+    "created_time_format": "04-17-2025 12:47:10 PM",
+    "reproducible": {
+        "id": "1209515000000019088",
+        "type": "Always"
+    },
+    "module": {
+        "name": "WEBSITES",
+        "id": "1209515000000662007"
+    },
+    "classification": {
+        "id": "1209515000000019066",
+        "type": "Other bug"
+    },
+    "tags": [
+        {
+            "name": "SEO",
+            "id": "1209515000002997007",
+            "color_class": "bg-tag11"
+        }
+    ],
+    "GROUP_NAME": {
+        "ASSOCIATED_TEAMS": {
+            "AnyTeam": "Not Associated"
+        },
+        "ASSOCIATED_TEAMS_COUNT": 0,
+        "IS_TEAM_UNASSIGNED": true
+    },
+    "bug_number": "1155",
+    "reporter_non_zuser": "false",
+    "reported_person": "Alexander Savenkov",
+    "reporter_email": "a.savenkov@swearl.com",
+    "id_string": "1209515000014616207",
+    "closed": false,
+    "bug_prefix": "EA1",
+    "attachment_count": "0",
+    "status": {
+        "colorcode": "#a9b2c0",
+        "id": "1209515000000007045",
+        "type": "Open"
+    }
+}

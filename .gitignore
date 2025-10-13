@@ -45,6 +45,14 @@ config.local.*
 .env
 .env.local
 
+# Integration secrets (NEVER COMMIT!)
+*.env
+config_*.env
+service_account*.json
+credentials*.json
+src/integrations/zoho/config_zoho.env
+src/integrations/google/service_account.json
+
 # Temporary
 tmp/
 temp/
