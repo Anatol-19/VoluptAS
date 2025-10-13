@@ -1,90 +1,37 @@
-"""
-Модуль для работы с базой данных
-
-Настройка SQLAlchemy, создание сессий, инициализация БД
-"""
-
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+﻿import os
 from pathlib import Path
-from typing import Generator
+from sqlalchemy import create_engine, event
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine import Engine
 
-# Базовый класс для моделей
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = PROJECT_ROOT / 'data'
+DATA_DIR.mkdir(exist_ok=True)
+
+DATABASE_PATH = DATA_DIR / 'voluptas.db'
+DATABASE_URL = f'sqlite:///{DATABASE_PATH}'
+
+engine = create_engine(DATABASE_URL, echo=False, connect_args={'check_same_thread': False})
+
+@event.listens_for(Engine, 'connect')
+def set_sqlite_pragma(dbapi_conn, connection_record):
+    cursor = dbapi_conn.cursor()
+    cursor.execute('PRAGMA foreign_keys=ON')
+    cursor.close()
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Глобальные переменные для engine и session
-engine = None
-SessionLocal = None
-
-
-def init_database(db_uri: str):
-    """
-    Инициализация базы данных
-    
-    Args:
-        db_uri: URI подключения к базе данных
-    
-    Создаёт engine, sessionmaker и все таблицы
-    """
-    global engine, SessionLocal
-    
-    # Создание engine
-    engine = create_engine(
-        db_uri,
-        connect_args={"check_same_thread": False},  # Для SQLite
-        echo=False  # True для отладки SQL запросов
-    )
-    
-    # Создание sessionmaker
-    SessionLocal = sessionmaker(
-        autocommit=False,
-        autoflush=False,
-        bind=engine
-    )
-    
-    # Создание всех таблиц
-    Base.metadata.create_all(bind=engine)
-    
-    print(f"✓ База данных инициализирована: {db_uri}")
-
-
-def get_session() -> Generator[Session, None, None]:
-    """
-    Получить сессию для работы с БД
-    
-    Yields:
-        Session: Сессия SQLAlchemy
-        
-    Использование:
-        with get_session() as session:
-            # работа с БД
-            pass
-    """
-    if SessionLocal is None:
-        raise RuntimeError("База данных не инициализирована. Вызовите init_database() сначала.")
-    
-    session = SessionLocal()
+def get_db():
+    db = SessionLocal()
     try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+        yield db
     finally:
-        session.close()
+        db.close()
 
+def init_db():
+    from src.models import functional_item, user
+    Base.metadata.create_all(bind=engine)
+    print(f'✅ База данных инициализирована: {DATABASE_PATH}')
 
-def create_session() -> Session:
-    """
-    Создать новую сессию для работы с БД
-    
-    Returns:
-        Session: Сессия SQLAlchemy
-        
-    ВАЖНО: Не забыть закрыть сессию после использования!
-    """
-    if SessionLocal is None:
-        raise RuntimeError("База данных не инициализирована. Вызовите init_database() сначала.")
-    
-    return SessionLocal()

@@ -50,8 +50,11 @@ config.local.*
 config_*.env
 service_account*.json
 credentials*.json
-src/integrations/zoho/config_zoho.env
-src/integrations/google/service_account.json
+
+# Centralized credentials folder
+credentials/*.json
+credentials/*.env
+!credentials/README.md
 
 # Temporary
 tmp/

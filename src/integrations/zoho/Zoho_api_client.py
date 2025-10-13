@@ -162,11 +162,12 @@ class ZohoAPI:
     @staticmethod
     def save_tokens(access_token: str, refresh_token: str) -> None:
         """
-        Сохраняет access_token и refresh_token в config_zoho.env.
+        Сохраняет access_token и refresh_token в credentials/zoho.env.
         :param access_token: Новый токен доступа.
         :param refresh_token: Новый токен обновления.
         """
-        env_path = os.path.join(os.path.dirname(__file__), "config_zoho.env")
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        env_path = os.path.join(project_root, "credentials", "zoho.env")
         with open(env_path, "r") as file:
             lines = file.readlines()
 
