@@ -12,13 +12,8 @@ from src.db.database import Base
 from typing import Optional, List, Dict
 
 
-# Таблица для N:M связей между функциональными элементами
-functional_item_relations = Table(
-    'functional_item_relations',
-    Base.metadata,
-    Column('item_id', Integer, ForeignKey('functional_items.id'), primary_key=True),
-    Column('related_item_id', Integer, ForeignKey('functional_items.id'), primary_key=True)
-)
+# ПРИМЕЧАНИЕ: Таблица functional_item_relations теперь определена в models/relation.py
+# как полноценная модель с типами связей
 
 
 class FunctionalItem(Base):
@@ -40,6 +35,12 @@ class FunctionalItem(Base):
     functional_id = Column(String(500), nullable=False, unique=True, index=True)
     # Примеры: "front", "front.splash_page", "front.splash_page.cookies"
     # Автогенерируется по структуре module.epic.feature
+    
+    # === ALIAS TAG (короткий уникальный алиас) ===
+    alias_tag = Column(String(200), unique=True, nullable=True, index=True)
+    # Примеры: "cookies", "Value_Popup", "Login_Page"
+    # Короткое название для удобного поиска
+    # Если пустой — используется последняя часть functional_id
     
     # === ОСНОВНЫЕ ПОЛЯ ===
     title = Column(String(500), nullable=False)
@@ -94,14 +95,8 @@ class FunctionalItem(Base):
     # Иерархические relationships
     parent = relationship("FunctionalItem", remote_side=[id], backref="children")
     
-    # N:M relationships для связанных элементов
-    related_items = relationship(
-        "FunctionalItem",
-        secondary=functional_item_relations,
-        primaryjoin=id == functional_item_relations.c.item_id,
-        secondaryjoin=id == functional_item_relations.c.related_item_id,
-        backref="related_to"
-    )
+    # ПРИМЕЧАНИЕ: Связи теперь управляются через модель Relation
+    # related_items доступны через outgoing_relations и incoming_relations
     
     # === ПОКРЫТИЕ ТЕСТАМИ ===
     test_cases_linked = Column(Text, nullable=True)  # JSON array или CSV
@@ -167,6 +162,7 @@ class FunctionalItem(Base):
         return {
             "id": self.id,
             "functional_id": self.functional_id,
+            "alias_tag": self.alias_tag,
             "title": self.title,
             "type": self.type,
             "description": self.description,

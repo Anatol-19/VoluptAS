@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 import json
 import os
+import shutil
 from pathlib import Path
 from .zoho_oauth_wizard import ZohoOAuthWizard
 
@@ -90,6 +91,11 @@ class SettingsDialog(QDialog):
         self.project_root = Path(__file__).resolve().parent.parent.parent.parent
         self.zoho_env_path = self.project_root / 'credentials' / 'zoho.env'
         self.google_json_path = self.project_root / 'credentials' / 'google_credentials.json'
+        # Fallback на service_account.json если google_credentials.json не найден
+        if not self.google_json_path.exists():
+            fallback = self.project_root / 'credentials' / 'service_account.json'
+            if fallback.exists():
+                self.google_json_path = fallback
         self.qase_env_path = self.project_root / 'credentials' / 'qase.env'
         
         # Потоки
@@ -551,7 +557,7 @@ class SettingsDialog(QDialog):
         """Выбор проекта из списка"""
         project_id = item.data(Qt.ItemDataRole.UserRole)
         if project_id:
-            self.zoho_project_id_edit.setText(project_id)
+            self.zoho_project_id_edit.setText(str(project_id))
     
     def validate_google_json(self):
         """Проверить валидность Google JSON"""

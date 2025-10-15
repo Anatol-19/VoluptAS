@@ -27,42 +27,8 @@ class Config:
     DB_PATH = DB_DIR / DB_NAME
     DB_URI = f"sqlite:///{DB_PATH}"
     
-    # Справочники (только для разработки, не редактируются через UI в MVP)
-    TYPES = [
-        "Module",
-        "Epic", 
-        "Feature",
-        "Page",
-        "Service",
-        "Element",
-        "Story"
-    ]
-    
-    SEGMENTS = [
-        "UI",
-        "UX/CX",
-        "API",
-        "Backend",
-        "Database",
-        "Integration",
-        "Security",
-        "Performance"
-    ]
-    
-    AUTOMATION_STATUSES = [
-        "Not Started",
-        "In Progress",
-        "Automated",
-        "Partially Automated",
-        "Not Applicable"
-    ]
-    
-    MATURITY_LEVELS = [
-        "Draft",
-        "In Review",
-        "Approved",
-        "Deprecated"
-    ]
+    # Справочники теперь хранятся в БД (таблица dictionaries)
+    # Эти константы — только fallback на случай проблем с БД
     
     # UI настройки
     WINDOW_TITLE = "VoluptAS - QA Coverage Tool"
@@ -107,36 +73,71 @@ class Config:
     
     def get_types(self) -> List[str]:
         """
-        Получить список типов элементов
+        Получить список типов элементов (из БД)
         
         Returns:
             List[str]: Список типов
         """
-        return self.TYPES.copy()
+        return self._get_dict_values('type')
     
     def get_segments(self) -> List[str]:
         """
-        Получить список сегментов
+        Получить список сегментов (из БД)
         
         Returns:
             List[str]: Список сегментов
         """
-        return self.SEGMENTS.copy()
+        return self._get_dict_values('segment')
     
     def get_automation_statuses(self) -> List[str]:
         """
-        Получить список статусов автоматизации
+        Получить список статусов автоматизации (из БД)
         
         Returns:
             List[str]: Список статусов
         """
-        return self.AUTOMATION_STATUSES.copy()
+        return self._get_dict_values('automation_status')
     
     def get_maturity_levels(self) -> List[str]:
         """
-        Получить список уровней зрелости
+        Получить список уровней зрелости (из БД)
         
         Returns:
             List[str]: Список уровней
         """
-        return self.MATURITY_LEVELS.copy()
+        return self._get_dict_values('maturity')
+    
+    def get_positions(self) -> List[str]:
+        """
+        Получить список должностей (из БД)
+        
+        Returns:
+            List[str]: Список должностей
+        """
+        return self._get_dict_values('position')
+    
+    def _get_dict_values(self, dict_type: str) -> List[str]:
+        """
+        Универсальный метод для чтения справочников из БД
+        
+        Args:
+            dict_type: тип справочника
+        
+        Returns:
+            List[str]: список значений
+        """
+        try:
+            from src.db import SessionLocal
+            from src.models import Dictionary
+            
+            session = SessionLocal()
+            results = session.query(Dictionary.value).filter(
+                Dictionary.dict_type == dict_type,
+                Dictionary.is_active == True
+            ).order_by(Dictionary.display_order).all()
+            session.close()
+            
+            return [r[0] for r in results]
+        except Exception as e:
+            print(f"⚠️ Ошибка чтения справочника {dict_type}: {e}")
+            return []

@@ -19,10 +19,19 @@ class ZohoSyncThread(QThread):
     
     def run(self):
         try:
+            print("[DEBUG] Запуск Zoho Sync Thread...")
             client = ZohoAPI()
+            print("[DEBUG] ZohoAPI инициализирован")
             users_data = client.get_users()
-            self.finished.emit(users_data, "")
+            print(f"[DEBUG] Получено пользователей: {len(users_data) if users_data else 0}")
+            if not users_data:
+                self.finished.emit([], "Не удалось получить данные пользователей из Zoho. Проверьте настройки OAuth scope.")
+            else:
+                self.finished.emit(users_data, "")
         except Exception as e:
+            print(f"[ERROR] Zoho Sync Thread: {e}")
+            import traceback
+            traceback.print_exc()
             self.finished.emit([], str(e))
 
 
@@ -286,7 +295,10 @@ class UserManagerWindow(QMainWindow):
     def on_sync_finished(self, users_data, error):
         """Обработка результата экспорта"""
         if error:
-            QMessageBox.critical(self, 'Ошибка экспорта', f'Не удалось экспортировать из Zoho:\n{error}')
+            error_msg = f'Не удалось экспортировать из Zoho:\n{error}'
+            if 'OAuth scope' in error or 'Invalid' in error:
+                error_msg += '\n\n⚠️ Возможно, нужно перезапустить OAuth Wizard с правильными scope.\nПерейдите в Настройки → Zoho → OAuth Wizard'
+            QMessageBox.critical(self, 'Ошибка экспорта', error_msg)
             self.statusBar().showMessage('❌ Ошибка экспорта')
             return
         

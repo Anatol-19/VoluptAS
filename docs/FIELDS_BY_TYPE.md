@@ -22,7 +22,7 @@ Module (Модуль)
 - ✅ title
 - ✅ type = "Module"
 - ✅ description
-- ✅ segment
+- ❌ segment (НЕ применяется к Module)
 - ✅ is_crit
 - ✅ is_focus
 - ✅ responsible_qa (обязательно)
@@ -49,7 +49,7 @@ Module (Модуль)
 - ✅ type = "Epic"
 - ✅ description
 - ✅ **module** (выбор из списка модулей) ← родитель
-- ✅ segment
+- ❌ segment (НЕ применяется к Epic)
 - ✅ is_crit
 - ✅ is_focus
 - ✅ responsible_qa (обязательно)

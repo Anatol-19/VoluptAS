@@ -23,37 +23,44 @@ def get_field_config_for_type(item_type):
             'show': ['functional_id', 'title', 'description', 'is_crit', 'is_focus', 
                      'responsible_qa', 'responsible_dev', 'accountable', 'documentation_links'],
             'hide': ['module', 'epic', 'feature', 'segment'],
-            'has_coverage': False
+            'has_coverage': False,
+            'has_segment': False
         },
         'Epic': {
             'show': base_fields + ['module', 'documentation_links'],
-            'hide': ['epic', 'feature'],
-            'has_coverage': False
+            'hide': ['epic', 'feature', 'segment'],
+            'has_coverage': False,
+            'has_segment': False
         },
         'Feature': {
             'show': base_fields + ['module', 'epic', 'test_cases_linked', 'automation_status', 'documentation_links'],
             'hide': ['feature'],
-            'has_coverage': True
+            'has_coverage': True,
+            'has_segment': True
         },
         'Story': {
             'show': base_fields + ['module', 'epic', 'feature', 'test_cases_linked', 'automation_status', 'documentation_links'],
             'hide': [],
-            'has_coverage': True
+            'has_coverage': True,
+            'has_segment': True
         },
         'Page': {
             'show': base_fields + ['module', 'epic', 'test_cases_linked', 'automation_status', 'documentation_links'],
             'hide': ['feature'],
-            'has_coverage': True
+            'has_coverage': True,
+            'has_segment': True
         },
         'Element': {
             'show': base_fields + ['test_cases_linked', 'automation_status', 'documentation_links'],
             'hide': ['module', 'epic', 'feature'],
-            'has_coverage': True
+            'has_coverage': True,
+            'has_segment': True
         },
         'Service': {
             'show': base_fields + ['module', 'container', 'database', 'test_cases_linked', 'automation_status', 'documentation_links'],
             'hide': ['epic', 'feature'],
-            'has_coverage': True
+            'has_coverage': True,
+            'has_segment': True
         }
     }
     return configs.get(item_type, configs['Feature'])
@@ -88,10 +95,19 @@ class DynamicEditDialog(QDialog):
         basic_tab = QWidget()
         basic_layout = QFormLayout(basic_tab)
         
-        # Functional ID
+        # Functional ID (FuncID)
         self.functional_id_edit = QLineEdit(self.item.functional_id or '')
         self.functional_id_edit.setReadOnly(not self.is_new)
-        basic_layout.addRow('* Functional ID:', self.functional_id_edit)
+        basic_layout.addRow('* FuncID:', self.functional_id_edit)
+        
+        # Alias Tag (короткий уникальный алиас)
+        self.alias_tag_edit = QLineEdit(self.item.alias_tag or '')
+        self.alias_tag_edit.setPlaceholderText('Короткое название (напр.: cookies, Login_Page)')
+        alias_hint = QLabel('<i>Уникальный алиас для удобного поиска. Если пустой — используется последняя часть FuncID</i>')
+        alias_hint.setStyleSheet('color: gray; font-size: 9pt;')
+        alias_hint.setWordWrap(True)
+        basic_layout.addRow('Alias Tag:', self.alias_tag_edit)
+        basic_layout.addRow('', alias_hint)
         
         # Title
         self.title_edit = QLineEdit(self.item.title or '')
@@ -226,6 +242,37 @@ class DynamicEditDialog(QDialog):
         tabs.addTab(coverage_tab, '✅ Покрытие')
         self.coverage_tab = coverage_tab
         
+        # Вкладка 4: BDD Feature
+        bdd_tab = QWidget()
+        bdd_layout = QVBoxLayout(bdd_tab)
+        
+        # Кнопки управления
+        bdd_buttons = QHBoxLayout()
+        generate_btn = QPushButton('🛠️ Сгенерировать Feature')
+        generate_btn.clicked.connect(self.generate_bdd_feature)
+        bdd_buttons.addWidget(generate_btn)
+        
+        export_btn = QPushButton('💾 Экспорт .feature')
+        export_btn.clicked.connect(self.export_bdd_feature)
+        bdd_buttons.addWidget(export_btn)
+        
+        bdd_buttons.addStretch()
+        bdd_layout.addLayout(bdd_buttons)
+        
+        # Текстовое поле для Gherkin
+        self.bdd_edit = QTextEdit()
+        self.bdd_edit.setPlaceholderText('Нажмите "Сгенерировать Feature" для автогенерации или введите вручную...')
+        self.bdd_edit.setStyleSheet('font-family: Consolas, monospace; font-size: 10pt;')
+        bdd_layout.addWidget(self.bdd_edit)
+        
+        # Подсказка
+        hint_label = QLabel('💡 Gherkin syntax: Feature, Scenario, Given, When, Then, And')
+        hint_label.setStyleSheet('color: gray; font-size: 9pt; font-style: italic;')
+        bdd_layout.addWidget(hint_label)
+        
+        tabs.addTab(bdd_tab, '🧑‍💻 BDD')
+        self.bdd_tab = bdd_tab
+        
         main_layout.addWidget(tabs)
         
         # Кнопки
@@ -255,13 +302,22 @@ class DynamicEditDialog(QDialog):
         """Показывает/скрывает поля в зависимости от типа"""
         config = get_field_config_for_type(item_type)
         
-        # Показываем/скрываем иерархические поля и segment
-        for field in ['module', 'epic', 'feature', 'segment']:
+        # Показываем/скрываем иерархические поля
+        for field in ['module', 'epic', 'feature']:
             if field in self.field_widgets:
                 label, widget = self.field_widgets[field]
                 visible = field not in config['hide']
                 label.setVisible(visible)
                 widget.setVisible(visible)
+        
+        # Segment отдельно - только для типов с has_segment=True
+        if 'segment' in self.field_widgets:
+            label, widget = self.field_widgets['segment']
+            visible = config.get('has_segment', False)
+            label.setVisible(visible)
+            widget.setVisible(visible)
+            if not visible:
+                widget.setCurrentText('')  # Очищаем если скрыто
         
         # Показываем/скрываем вкладку покрытия
         if hasattr(self, 'coverage_tab'):
@@ -269,6 +325,38 @@ class DynamicEditDialog(QDialog):
             if isinstance(tab_widget, QTabWidget):
                 index = tab_widget.indexOf(self.coverage_tab)
                 tab_widget.setTabVisible(index, config['has_coverage'])
+    
+    def generate_bdd_feature(self):
+        """Генерация BDD Feature для текущего элемента"""
+        from src.bdd.feature_generator import FeatureGenerator
+        
+        # Генерируем feature для текущего item
+        feature_content = FeatureGenerator.generate_feature(self.item)
+        self.bdd_edit.setPlainText(feature_content)
+        
+        QMessageBox.information(self, 'Успех', '✅ Feature файл сгенерирован!\n\nВы можете отредактировать его вручную.')
+    
+    def export_bdd_feature(self):
+        """Экспорт feature файла"""
+        content = self.bdd_edit.toPlainText().strip()
+        
+        if not content:
+            QMessageBox.warning(self, 'Предупреждение', 'Feature файл пуст.\nСначала сгенерируйте его.')
+            return
+        
+        # Выбор пути для сохранения
+        filename = f"{self.item.functional_id.replace('.', '_')}.feature"
+        filepath, _ = QFileDialog.getSaveFileName(
+            self, 'Сохранить feature файл', filename, 'Feature Files (*.feature)'
+        )
+        
+        if filepath:
+            try:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                QMessageBox.information(self, 'Успех', f'✅ Feature файл сохранён:\n{filepath}')
+            except Exception as e:
+                QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
     
     def save(self):
         """Сохранение с валидацией"""
@@ -291,6 +379,7 @@ class DynamicEditDialog(QDialog):
         
         # Сохраняем данные
         self.item.functional_id = self.functional_id_edit.text().strip()
+        self.item.alias_tag = self.alias_tag_edit.text().strip() or None
         self.item.title = self.title_edit.text().strip()
         self.item.type = self.type_combo.currentText()
         self.item.description = self.description_edit.toPlainText().strip() or None
@@ -547,6 +636,22 @@ class MainWindow(QMainWindow):
         user_manager_action.triggered.connect(self.open_user_manager)
         tools_menu.addAction(user_manager_action)
         
+        tools_menu.addSeparator()
+        
+        dict_manager_action = QAction('📚 Справочники', self)
+        dict_manager_action.triggered.connect(self.open_dict_manager)
+        tools_menu.addAction(dict_manager_action)
+        
+        tools_menu.addSeparator()
+        
+        bdd_manager_action = QAction('🧑‍💻 BDD Feature Manager', self)
+        bdd_manager_action.triggered.connect(self.open_bdd_manager)
+        tools_menu.addAction(bdd_manager_action)
+        
+        generate_bdd_action = QAction('📝 Генерация BDD (batch)', self)
+        generate_bdd_action.triggered.connect(self.generate_bdd_features)
+        tools_menu.addAction(generate_bdd_action)
+        
         # Меню Граф
         graph_menu = menubar.addMenu('🕸️ Граф')
         open_graph_action = QAction('🌐 Открыть граф', self)
@@ -600,45 +705,105 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
         
-        # Поиск и фильтры
-        search_layout = QHBoxLayout()
-        search_layout.addWidget(QLabel('🔍 Поиск:'))
+        # Поиск и фильтры - первая строка
+        search_layout1 = QHBoxLayout()
+        search_layout1.addWidget(QLabel('🔍 Поиск:'))
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText('Functional ID, Title, Module, Epic...')
+        self.search_input.setPlaceholderText('Functional ID, Alias, Title, Module, Epic...')
         self.search_input.textChanged.connect(self.filter_table)
-        search_layout.addWidget(self.search_input)
+        search_layout1.addWidget(self.search_input)
         
-        search_layout.addWidget(QLabel('QA:'))
+        search_layout1.addWidget(QLabel('Type:'))
+        self.type_filter = QComboBox()
+        self.type_filter.currentTextChanged.connect(self.filter_table)
+        search_layout1.addWidget(self.type_filter)
+        
+        search_layout1.addWidget(QLabel('Module:'))
+        self.module_filter = QComboBox()
+        self.module_filter.currentTextChanged.connect(self.filter_table)
+        search_layout1.addWidget(self.module_filter)
+        
+        search_layout1.addWidget(QLabel('Epic:'))
+        self.epic_filter = QComboBox()
+        self.epic_filter.currentTextChanged.connect(self.filter_table)
+        search_layout1.addWidget(self.epic_filter)
+        
+        layout.addLayout(search_layout1)
+        
+        # Фильтры - вторая строка
+        search_layout2 = QHBoxLayout()
+        
+        search_layout2.addWidget(QLabel('Segment:'))
+        self.segment_filter = QComboBox()
+        self.segment_filter.currentTextChanged.connect(self.filter_table)
+        search_layout2.addWidget(self.segment_filter)
+        
+        search_layout2.addWidget(QLabel('QA:'))
         self.qa_filter = QComboBox()
         self.qa_filter.currentTextChanged.connect(self.filter_table)
-        search_layout.addWidget(self.qa_filter)
+        search_layout2.addWidget(self.qa_filter)
         
-        search_layout.addWidget(QLabel('Dev:'))
+        search_layout2.addWidget(QLabel('Dev:'))
         self.dev_filter = QComboBox()
         self.dev_filter.currentTextChanged.connect(self.filter_table)
-        search_layout.addWidget(self.dev_filter)
+        search_layout2.addWidget(self.dev_filter)
         
-        layout.addLayout(search_layout)
+        # Кнопка сброса фильтров
+        clear_filters_btn = QPushButton('❌ Сбросить фильтры')
+        clear_filters_btn.clicked.connect(self.clear_filters)
+        search_layout2.addWidget(clear_filters_btn)
+        
+        layout.addLayout(search_layout2)
+        
+        # Горизонтальный layout: таблица + мини-граф
+        content_layout = QHBoxLayout()
         
         # Таблица
         self.table = QTableWidget()
-        self.table.setColumnCount(10)
+        self.table.setColumnCount(11)
         self.table.setHorizontalHeaderLabels([
-            'Functional ID', 'Title', 'Type', 'Module', 'Epic', 'QA', 'Dev', 'Segment', 'Crit', 'Focus'
+            'FuncID', 'Alias', 'Title', 'Type', 'Module', 'Epic', 'QA', 'Dev', 'Segment', 'Crit', 'Focus'
         ])
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.table.doubleClicked.connect(self.edit_item)
-        layout.addWidget(self.table)
+        # Разрешаем inline-редактирование по double-click
+        self.table.setEditTriggers(QTableWidget.EditTrigger.DoubleClicked)
+        self.table.itemChanged.connect(self.on_item_changed)
+        self.table.itemSelectionChanged.connect(self.on_selection_changed)
+        content_layout.addWidget(self.table, stretch=7)
+        
+        # Мини-граф справа
+        from src.ui.mini_graph_widget import MiniGraphWidget
+        self.mini_graph = MiniGraphWidget(self)
+        self.mini_graph.setMinimumWidth(350)
+        self.mini_graph.setMaximumWidth(450)
+        content_layout.addWidget(self.mini_graph, stretch=3)
+        
+        layout.addLayout(content_layout)
         
         self.statusBar().showMessage('Готов')
     
     def load_data(self):
         self.current_items = self.session.query(FunctionalItem).order_by(FunctionalItem.functional_id).all()
         
-        # Обновляем фильтры ответственных
+        # Обновляем все фильтры
+        types = sorted(set(item.type for item in self.current_items if item.type))
+        modules = sorted(set(item.module for item in self.current_items if item.module))
+        epics = sorted(set(item.epic for item in self.current_items if item.epic))
+        segments = sorted(set(item.segment for item in self.current_items if item.segment))
         qa_users = sorted(set(item.responsible_qa.name for item in self.current_items if item.responsible_qa))
         dev_users = sorted(set(item.responsible_dev.name for item in self.current_items if item.responsible_dev))
+        
+        self.type_filter.clear()
+        self.type_filter.addItems([''] + types)
+        
+        self.module_filter.clear()
+        self.module_filter.addItems([''] + modules)
+        
+        self.epic_filter.clear()
+        self.epic_filter.addItems([''] + epics)
+        
+        self.segment_filter.clear()
+        self.segment_filter.addItems([''] + segments)
         
         self.qa_filter.clear()
         self.qa_filter.addItems([''] + qa_users)
@@ -651,19 +816,69 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f'✅ Загружено: {len(self.current_items)} записей')
     
     def populate_table(self, items):
+        # Отключаем itemChanged на время заполнения
+        self.table.itemChanged.disconnect(self.on_item_changed)
+        
         self.table.setRowCount(len(items))
         for row_idx, item in enumerate(items):
-            self.table.setItem(row_idx, 0, QTableWidgetItem(item.functional_id))
-            self.table.setItem(row_idx, 1, QTableWidgetItem(item.title or ''))
-            self.table.setItem(row_idx, 2, QTableWidgetItem(item.type or ''))
-            self.table.setItem(row_idx, 3, QTableWidgetItem(item.module or ''))
-            self.table.setItem(row_idx, 4, QTableWidgetItem(item.epic or ''))
-            self.table.setItem(row_idx, 5, QTableWidgetItem(item.responsible_qa.name if item.responsible_qa else ''))
-            self.table.setItem(row_idx, 6, QTableWidgetItem(item.responsible_dev.name if item.responsible_dev else ''))
-            self.table.setItem(row_idx, 7, QTableWidgetItem(item.segment or ''))
-            self.table.setItem(row_idx, 8, QTableWidgetItem('✓' if item.is_crit else ''))
-            self.table.setItem(row_idx, 9, QTableWidgetItem('✓' if item.is_focus else ''))
+            # Если alias_tag пустой, используем последнюю часть functional_id
+            alias_display = item.alias_tag if item.alias_tag else item.functional_id.split('.')[-1]
+            
+            # Нередактируемые колонки
+            funcid_item = QTableWidgetItem(item.functional_id)
+            funcid_item.setFlags(funcid_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row_idx, 0, funcid_item)
+            
+            self.table.setItem(row_idx, 1, QTableWidgetItem(alias_display))  # Редактируемый
+            self.table.setItem(row_idx, 2, QTableWidgetItem(item.title or ''))  # Редактируемый
+            
+            type_item = QTableWidgetItem(item.type or '')
+            type_item.setFlags(type_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row_idx, 3, type_item)
+            
+            module_item = QTableWidgetItem(item.module or '')
+            module_item.setFlags(module_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row_idx, 4, module_item)
+            
+            epic_item = QTableWidgetItem(item.epic or '')
+            epic_item.setFlags(epic_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row_idx, 5, epic_item)
+            
+            qa_item = QTableWidgetItem(item.responsible_qa.name if item.responsible_qa else '')
+            qa_item.setFlags(qa_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row_idx, 6, qa_item)
+            
+            dev_item = QTableWidgetItem(item.responsible_dev.name if item.responsible_dev else '')
+            dev_item.setFlags(dev_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row_idx, 7, dev_item)
+            
+            self.table.setItem(row_idx, 8, QTableWidgetItem(item.segment or ''))  # Редактируемый
+            
+            # Crit и Focus - чекбоксы
+            crit_widget = QWidget()
+            crit_layout = QHBoxLayout(crit_widget)
+            crit_layout.setContentsMargins(0, 0, 0, 0)
+            crit_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            crit_check = QCheckBox()
+            crit_check.setChecked(bool(item.is_crit))
+            crit_check.stateChanged.connect(lambda state, r=row_idx, c=9: self.on_checkbox_changed(r, c, state))
+            crit_layout.addWidget(crit_check)
+            self.table.setCellWidget(row_idx, 9, crit_widget)
+            
+            focus_widget = QWidget()
+            focus_layout = QHBoxLayout(focus_widget)
+            focus_layout.setContentsMargins(0, 0, 0, 0)
+            focus_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            focus_check = QCheckBox()
+            focus_check.setChecked(bool(item.is_focus))
+            focus_check.stateChanged.connect(lambda state, r=row_idx, c=10: self.on_checkbox_changed(r, c, state))
+            focus_layout.addWidget(focus_check)
+            self.table.setCellWidget(row_idx, 10, focus_widget)
+        
         self.table.resizeColumnsToContents()
+        
+        # Включаем itemChanged обратно
+        self.table.itemChanged.connect(self.on_item_changed)
     
     def quick_filter(self, filter_type):
         """Быстрая фильтрация (все/критичное/фокусное)"""
@@ -672,22 +887,109 @@ class MainWindow(QMainWindow):
     
     def apply_quick_filter(self):
         """Применить быстрый фильтр"""
+        # Сначала показываем все строки
         for row in range(self.table.rowCount()):
-            show = True
-            if self.current_filter == 'crit':
-                crit_item = self.table.item(row, 8)
-                show = crit_item and crit_item.text() == '✓'
-            elif self.current_filter == 'focus':
-                focus_item = self.table.item(row, 9)
-                show = focus_item and focus_item.text() == '✓'
-            
-            if not show:
-                self.table.setRowHidden(row, True)
+            self.table.setRowHidden(row, False)
+        
+        # Потом применяем фильтр
+        if self.current_filter != 'all':
+            for row in range(self.table.rowCount()):
+                show = True
+                if self.current_filter == 'crit':
+                    crit_item = self.table.item(row, 9)  # Изменено: 8 → 9
+                    show = crit_item and crit_item.text() == '✓'
+                elif self.current_filter == 'focus':
+                    focus_item = self.table.item(row, 10)  # Изменено: 9 → 10
+                    show = focus_item and focus_item.text() == '✓'
+                
+                self.table.setRowHidden(row, not show)
         
         self.filter_table()  # Применяем остальные фильтры
     
+    def clear_filters(self):
+        """Сбросить все фильтры"""
+        self.search_input.clear()
+        self.type_filter.setCurrentIndex(0)
+        self.module_filter.setCurrentIndex(0)
+        self.epic_filter.setCurrentIndex(0)
+        self.segment_filter.setCurrentIndex(0)
+        self.qa_filter.setCurrentIndex(0)
+        self.dev_filter.setCurrentIndex(0)
+        self.current_filter = 'all'
+        self.apply_quick_filter()
+    
+    def on_checkbox_changed(self, row, col, state):
+        """Обработка изменения чекбокса"""
+        functional_id = self.table.item(row, 0).text()
+        db_item = self.session.query(FunctionalItem).filter_by(functional_id=functional_id).first()
+        
+        if not db_item:
+            return
+        
+        try:
+            if col == 9:  # Crit
+                db_item.is_crit = 1 if state == Qt.CheckState.Checked.value else 0
+            elif col == 10:  # Focus
+                db_item.is_focus = 1 if state == Qt.CheckState.Checked.value else 0
+            
+            self.session.commit()
+            self.statusBar().showMessage(f'✅ Сохранено: {functional_id}')
+        except Exception as e:
+            self.session.rollback()
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
+    
+    def on_item_changed(self, item):
+        """Обработка изменения ячейки в таблице"""
+        row = item.row()
+        col = item.column()
+        
+        # Редактируемые колонки: Alias(1), Title(2), Segment(8)
+        if col not in [1, 2, 8]:
+            return
+        
+        functional_id = self.table.item(row, 0).text()
+        db_item = self.session.query(FunctionalItem).filter_by(functional_id=functional_id).first()
+        
+        if not db_item:
+            return
+        
+        new_value = item.text().strip()
+        
+        try:
+            if col == 1:  # Alias
+                db_item.alias_tag = new_value if new_value else None
+            elif col == 2:  # Title
+                if not new_value:
+                    QMessageBox.warning(self, 'Ошибка', 'Title не может быть пустым')
+                    item.setText(db_item.title)
+                    return
+                db_item.title = new_value
+            elif col == 8:  # Segment
+                db_item.segment = new_value if new_value else None
+            
+            self.session.commit()
+            self.statusBar().showMessage(f'✅ Сохранено: {functional_id}')
+        except Exception as e:
+            self.session.rollback()
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
+    
+    def on_selection_changed(self):
+        """Обработка выбора строки в таблице"""
+        selected = self.table.currentRow()
+        if selected >= 0:
+            functional_id = self.table.item(selected, 0).text()
+            item = self.session.query(FunctionalItem).filter_by(functional_id=functional_id).first()
+            if item:
+                self.mini_graph.update_graph(item.id)
+        else:
+            self.mini_graph.clear_graph()
+    
     def filter_table(self):
         search_text = self.search_input.text().lower()
+        type_filter = self.type_filter.currentText()
+        module_filter = self.module_filter.currentText()
+        epic_filter = self.epic_filter.currentText()
+        segment_filter = self.segment_filter.currentText()
         qa_filter = self.qa_filter.currentText()
         dev_filter = self.dev_filter.currentText()
         
@@ -705,14 +1007,34 @@ class MainWindow(QMainWindow):
                 )
                 show = show and match
             
+            # Фильтр по Type
+            if type_filter and show:
+                type_cell = self.table.item(row, 3)
+                show = show and (type_cell and type_cell.text() == type_filter)
+            
+            # Фильтр по Module
+            if module_filter and show:
+                module_cell = self.table.item(row, 4)
+                show = show and (module_cell and module_cell.text() == module_filter)
+            
+            # Фильтр по Epic
+            if epic_filter and show:
+                epic_cell = self.table.item(row, 5)
+                show = show and (epic_cell and epic_cell.text() == epic_filter)
+            
+            # Фильтр по Segment
+            if segment_filter and show:
+                segment_cell = self.table.item(row, 8)
+                show = show and (segment_cell and segment_cell.text() == segment_filter)
+            
             # Фильтр по QA
             if qa_filter and show:
-                qa_cell = self.table.item(row, 5)
+                qa_cell = self.table.item(row, 6)
                 show = show and (qa_cell and qa_cell.text() == qa_filter)
             
             # Фильтр по Dev
             if dev_filter and show:
-                dev_cell = self.table.item(row, 6)
+                dev_cell = self.table.item(row, 7)
                 show = show and (dev_cell and dev_cell.text() == dev_filter)
             
             self.table.setRowHidden(row, not show)
@@ -794,9 +1116,70 @@ class MainWindow(QMainWindow):
     
     def open_graph_view(self):
         """Открыть граф связей"""
-        from src.ui.graph_view import GraphViewWindow
+        from src.ui.graph_view_new import GraphViewWindow
         graph_window = GraphViewWindow(self)
         graph_window.show()
+    
+    def open_dict_manager(self):
+        """Открыть управление справочниками"""
+        from src.ui.dialogs.dictionary_manager import DictionaryManagerWindow
+        manager = DictionaryManagerWindow(self)
+        manager.show()
+    
+    def open_bdd_manager(self):
+        """Открыть BDD Feature Manager"""
+        from src.ui.dialogs.bdd_manager import BDDFeatureManager
+        manager = BDDFeatureManager(self)
+        manager.show()
+    
+    def generate_bdd_features(self):
+        """Генерация BDD Feature файлов"""
+        from src.bdd.feature_generator import FeatureGenerator
+        from pathlib import Path
+        
+        # Выбор директории
+        output_dir = QFileDialog.getExistingDirectory(
+            self, 'Выберите директорию для сохранения feature файлов', ''
+        )
+        
+        if not output_dir:
+            return
+        
+        # Генерируем для всех элементов или только для Feature/Story?
+        reply = QMessageBox.question(
+            self, 'Генерация Feature файлов',
+            'Генерировать для всех элементов?\n\n'
+            'Yes - все элементы\n'
+            'No - только Feature и Story',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel
+        )
+        
+        if reply == QMessageBox.StandardButton.Cancel:
+            return
+        
+        # Фильтруем элементы
+        if reply == QMessageBox.StandardButton.Yes:
+            items = self.session.query(FunctionalItem).all()
+        else:
+            items = self.session.query(FunctionalItem).filter(
+                FunctionalItem.type.in_(['Feature', 'Story'])
+            ).all()
+        
+        if not items:
+            QMessageBox.information(self, 'Информация', 'Нет элементов для генерации')
+            return
+        
+        # Генерируем
+        try:
+            saved_files = FeatureGenerator.batch_generate(items, Path(output_dir))
+            QMessageBox.information(
+                self, 'Успех',
+                f'✅ Сгенерировано {len(saved_files)} feature файлов\n\n'
+                f'Директория: {output_dir}'
+            )
+            self.statusBar().showMessage(f'✅ Сгенерировано {len(saved_files)} feature файлов')
+        except Exception as e:
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось сгенерировать:\n{e}')
     
     def closeEvent(self, event):
         self.session.close()
