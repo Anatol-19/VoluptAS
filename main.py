@@ -614,96 +614,128 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('VoluptAS - Functional Coverage Management')
         self.setGeometry(100, 100, 1400, 900)
         
-        # Меню
+        # === НОВОЕ МЕНЮ ===
         menubar = self.menuBar()
         
-        file_menu = menubar.addMenu('Файл')
-        exit_action = QAction('Выход', self)
+        # Меню "Файл"
+        file_menu = menubar.addMenu('📁 Файл')
+        
+        save_action = QAction('💾 Сохранить', self)
+        save_action.setShortcut('Ctrl+S')
+        save_action.triggered.connect(self.save_data)
+        file_menu.addAction(save_action)
+        
+        file_menu.addSeparator()
+        
+        export_action = QAction('📤 Экспорт', self)
+        export_action.triggered.connect(self.export_data)
+        file_menu.addAction(export_action)
+        
+        import_action = QAction('📥 Импорт', self)
+        import_action.triggered.connect(self.import_data)
+        file_menu.addAction(import_action)
+        
+        file_menu.addSeparator()
+        
+        exit_action = QAction('🚺 Выход', self)
+        exit_action.setShortcut('Alt+F4')
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         
-        edit_menu = menubar.addMenu('Правка')
+        # Меню "Правка"
+        edit_menu = menubar.addMenu('✏️ Правка')
+        
+        refresh_action = QAction('🔄 Обновить', self)
+        refresh_action.setShortcut('F5')
+        refresh_action.triggered.connect(self.load_data)
+        edit_menu.addAction(refresh_action)
+        
+        edit_menu.addSeparator()
+        
         add_action = QAction('➕ Добавить', self)
+        add_action.setShortcut('Ctrl+N')
         add_action.triggered.connect(self.add_item)
         edit_menu.addAction(add_action)
         
-        tools_menu = menubar.addMenu('Инструменты')
+        edit_item_action = QAction('✏️ Редактировать', self)
+        edit_item_action.setShortcut('Ctrl+E')
+        edit_item_action.triggered.connect(self.edit_item)
+        edit_menu.addAction(edit_item_action)
+        
+        delete_action = QAction('🗑️ Удалить', self)
+        delete_action.setShortcut('Delete')
+        delete_action.triggered.connect(self.delete_item)
+        edit_menu.addAction(delete_action)
+        
+        edit_menu.addSeparator()
+        
+        save_edit_action = QAction('💾 Сохранить', self)
+        save_edit_action.setShortcut('Ctrl+S')
+        save_edit_action.triggered.connect(self.save_data)
+        edit_menu.addAction(save_edit_action)
+        
+        # Меню "Инструменты"
+        tools_menu = menubar.addMenu('🔧 Инструменты')
+        
+        sync_menu = tools_menu.addMenu('🔄 Синхронизация')
+        
+        sync_zoho_action = QAction('Zoho', self)
+        sync_zoho_action.triggered.connect(self.sync_zoho)
+        sync_menu.addAction(sync_zoho_action)
+        
+        sync_google_action = QAction('Google', self)
+        sync_menu.addAction(sync_google_action)
+        
+        sync_qase_action = QAction('Qase', self)
+        sync_menu.addAction(sync_qase_action)
+        
+        # Меню "Настройки"
+        settings_menu = menubar.addMenu('⚙️ Настройки')
+        
+        settings_action = QAction('⚙️ Настройки', self)
+        settings_action.setShortcut('Ctrl+,')
+        settings_action.triggered.connect(self.open_zoho_settings)
+        settings_menu.addAction(settings_action)
+        
         entity_editor_action = QAction('📦 Редактор сущностей', self)
         entity_editor_action.triggered.connect(self.open_entity_editor)
-        tools_menu.addAction(entity_editor_action)
+        settings_menu.addAction(entity_editor_action)
         
-        user_manager_action = QAction('👥 Управление пользователями', self)
+        user_manager_action = QAction('👥 Пользователи', self)
         user_manager_action.triggered.connect(self.open_user_manager)
-        tools_menu.addAction(user_manager_action)
-        
-        tools_menu.addSeparator()
+        settings_menu.addAction(user_manager_action)
         
         dict_manager_action = QAction('📚 Справочники', self)
         dict_manager_action.triggered.connect(self.open_dict_manager)
-        tools_menu.addAction(dict_manager_action)
+        settings_menu.addAction(dict_manager_action)
         
-        tools_menu.addSeparator()
+        # Меню "Помощь"
+        help_menu = menubar.addMenu('❓ Помощь')
         
-        bdd_manager_action = QAction('🧑‍💻 BDD Feature Manager', self)
-        bdd_manager_action.triggered.connect(self.open_bdd_manager)
-        tools_menu.addAction(bdd_manager_action)
+        docs_action = QAction('📖 Документация', self)
+        help_menu.addAction(docs_action)
         
-        generate_bdd_action = QAction('📝 Генерация BDD (batch)', self)
-        generate_bdd_action.triggered.connect(self.generate_bdd_features)
-        tools_menu.addAction(generate_bdd_action)
+        help_menu.addSeparator()
         
-        # Меню Граф
-        graph_menu = menubar.addMenu('🕸️ Граф')
-        open_graph_action = QAction('🌐 Открыть граф', self)
-        open_graph_action.triggered.connect(self.open_graph_view)
-        graph_menu.addAction(open_graph_action)
+        about_action = QAction('ℹ️ О программе', self)
+        help_menu.addAction(about_action)
         
-        # Меню Настройки
-        settings_menu = menubar.addMenu('Настройки')
-        zoho_settings_action = QAction('⚙️ Zoho API', self)
-        zoho_settings_action.triggered.connect(self.open_zoho_settings)
-        settings_menu.addAction(zoho_settings_action)
-        
-        # Тулбар
-        toolbar = QToolBar('Главная')
-        toolbar.setMovable(False)
-        self.addToolBar(toolbar)
-        
-        refresh_action = QAction('🔄 Обновить', self)
-        refresh_action.triggered.connect(self.load_data)
-        toolbar.addAction(refresh_action)
-        
-        add_action_tb = QAction('➕ Добавить', self)
-        add_action_tb.triggered.connect(self.add_item)
-        toolbar.addAction(add_action_tb)
-        
-        edit_action = QAction('✏️ Редактировать', self)
-        edit_action.triggered.connect(self.edit_item)
-        toolbar.addAction(edit_action)
-        
-        delete_action = QAction('🗑️ Удалить', self)
-        delete_action.triggered.connect(self.delete_item)
-        toolbar.addAction(delete_action)
-        
-        toolbar.addSeparator()
-        
-        # Быстрые фильтры
-        all_action = QAction('📋 Все', self)
-        all_action.triggered.connect(lambda: self.quick_filter('all'))
-        toolbar.addAction(all_action)
-        
-        crit_action = QAction('🔴 Критичное', self)
-        crit_action.triggered.connect(lambda: self.quick_filter('crit'))
-        toolbar.addAction(crit_action)
-        
-        focus_action = QAction('🎯 Фокусное', self)
-        focus_action.triggered.connect(lambda: self.quick_filter('focus'))
-        toolbar.addAction(focus_action)
+        # Тулбар удалён (всё в меню)
         
         # Центральный виджет
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
+        
+        # === НОВАЯ АРХИТЕКТУРА: ТАБЫ ===
+        from src.ui.widgets.main_tabs_widget import MainTabsWidget
+        
+        self.tabs = QTabWidget()
+        self.tabs.setDocumentMode(True)
+        
+        # Таб 1: Таблица (существующий функционал)
+        table_tab = QWidget()
+        table_layout = QVBoxLayout(table_tab)
         
         # Поиск и фильтры - первая строка
         search_layout1 = QHBoxLayout()
@@ -711,7 +743,7 @@ class MainWindow(QMainWindow):
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText('Functional ID, Alias, Title, Module, Epic...')
         self.search_input.textChanged.connect(self.filter_table)
-        search_layout1.addWidget(self.search_input)
+        search_layout1.addWidget(self.search_input, stretch=2)
         
         search_layout1.addWidget(QLabel('Type:'))
         self.type_filter = QComboBox()
@@ -728,7 +760,7 @@ class MainWindow(QMainWindow):
         self.epic_filter.currentTextChanged.connect(self.filter_table)
         search_layout1.addWidget(self.epic_filter)
         
-        layout.addLayout(search_layout1)
+        table_layout.addLayout(search_layout1)
         
         # Фильтры - вторая строка
         search_layout2 = QHBoxLayout()
@@ -753,7 +785,24 @@ class MainWindow(QMainWindow):
         clear_filters_btn.clicked.connect(self.clear_filters)
         search_layout2.addWidget(clear_filters_btn)
         
-        layout.addLayout(search_layout2)
+        search_layout2.addSeparator() if hasattr(search_layout2, 'addSeparator') else None
+        
+        # Быстрые фильтры (перенесены из toolbar)
+        all_btn = QPushButton('📋 Все')
+        all_btn.clicked.connect(lambda: self.quick_filter('all'))
+        search_layout2.addWidget(all_btn)
+        
+        crit_btn = QPushButton('🔴 Критичное')
+        crit_btn.clicked.connect(lambda: self.quick_filter('crit'))
+        search_layout2.addWidget(crit_btn)
+        
+        focus_btn = QPushButton('🎯 Фокусное')
+        focus_btn.clicked.connect(lambda: self.quick_filter('focus'))
+        search_layout2.addWidget(focus_btn)
+        
+        search_layout2.addStretch()
+        
+        table_layout.addLayout(search_layout2)
         
         # Горизонтальный layout: таблица + мини-граф
         content_layout = QHBoxLayout()
@@ -778,7 +827,44 @@ class MainWindow(QMainWindow):
         self.mini_graph.setMaximumWidth(450)
         content_layout.addWidget(self.mini_graph, stretch=3)
         
-        layout.addLayout(content_layout)
+        table_layout.addLayout(content_layout)
+        
+        # Добавляем таб с таблицей
+        self.tabs.addTab(table_tab, '📊 Таблица')
+        
+        # Таб 2: Полный граф
+        from src.ui.widgets.full_graph_tab import FullGraphTabWidget
+        self.graph_tab = FullGraphTabWidget(self)
+        self.tabs.addTab(self.graph_tab, '🌐 Граф')
+        
+        # Таб 3: BDD
+        from src.ui.widgets.bdd_tab import BddTabWidget
+        self.bdd_tab = BddTabWidget(self)
+        self.tabs.addTab(self.bdd_tab, '🧑‍💻 BDD')
+        
+        # Таб 4: Матрица трассировок
+        from src.ui.widgets.coverage_matrix_tab import CoverageMatrixTabWidget
+        self.coverage_tab = CoverageMatrixTabWidget(self)
+        self.tabs.addTab(self.coverage_tab, '📋 Трассировки')
+        
+        # Таб 5: INFRA
+        from src.ui.widgets.infra_maturity_tab import InfraMaturityTabWidget
+        self.infra_tab = InfraMaturityTabWidget(self)
+        self.tabs.addTab(self.infra_tab, '🏗️ INFRA')
+        
+        # Добавляем табы в главный layout
+        layout.addWidget(self.tabs)
+        
+        # Hotkeys для переключения табов
+        from PyQt6.QtGui import QShortcut, QKeySequence
+        QShortcut(QKeySequence('Ctrl+1'), self).activated.connect(lambda: self.tabs.setCurrentIndex(0))
+        QShortcut(QKeySequence('Ctrl+2'), self).activated.connect(lambda: self.tabs.setCurrentIndex(1))
+        QShortcut(QKeySequence('Ctrl+3'), self).activated.connect(lambda: self.tabs.setCurrentIndex(2))
+        QShortcut(QKeySequence('Ctrl+4'), self).activated.connect(lambda: self.tabs.setCurrentIndex(3))
+        QShortcut(QKeySequence('Ctrl+5'), self).activated.connect(lambda: self.tabs.setCurrentIndex(4))
+        
+        # Обработка смены таба
+        self.tabs.currentChanged.connect(self.on_tab_changed)
         
         self.statusBar().showMessage('Готов')
     
@@ -1180,6 +1266,105 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f'✅ Сгенерировано {len(saved_files)} feature файлов')
         except Exception as e:
             QMessageBox.critical(self, 'Ошибка', f'Не удалось сгенерировать:\n{e}')
+    
+    def on_tab_changed(self, index: int):
+        """Обработка смены таба"""
+        tab_names = ['Таблица', 'Граф', 'BDD', 'Трассировки', 'INFRA']
+        if 0 <= index < len(tab_names):
+            self.statusBar().showMessage(f'Активная вкладка: {tab_names[index]}')
+    
+    def save_data(self):
+        """Сохранить данные"""
+        try:
+            self.session.commit()
+            self.statusBar().showMessage('✅ Данные сохранены')
+        except Exception as e:
+            self.session.rollback()
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
+    
+    def export_data(self):
+        """Экспорт данных (CSV или Excel)"""
+        reply = QMessageBox.question(
+            self, 'Экспорт',
+            'Выберите формат экспорта:\n\n'
+            'Yes - CSV\n'
+            'No - Excel',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel
+        )
+        
+        if reply == QMessageBox.StandardButton.Cancel:
+            return
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            self.export_csv()
+        else:
+            self.export_excel()
+    
+    def import_data(self):
+        """Импорт данных (CSV)"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, 'Выберите CSV файл', '', 'CSV Files (*.csv);;All Files (*)'
+        )
+        
+        if not file_path:
+            return
+        
+        try:
+            from scripts.import_csv_full import import_from_csv
+            count = import_from_csv(file_path, self.session)
+            QMessageBox.information(
+                self, 'Успех',
+                f'✅ Импортировано: {count} элементов'
+            )
+            self.load_data()
+            self.statusBar().showMessage(f'✅ Импортировано: {count} элементов')
+        except Exception as e:
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось импортировать:\n{e}')
+    
+    def export_csv(self):
+        """Экспорт в CSV"""
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, 'Сохранить CSV', 'functional_items.csv', 'CSV Files (*.csv)'
+        )
+        
+        if not file_path:
+            return
+        
+        try:
+            import csv
+            with open(file_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    'FuncID', 'Alias', 'Title', 'Type', 'Module', 'Epic', 'QA', 'Dev', 'Segment', 'Crit', 'Focus'
+                ])
+                
+                for item in self.current_items:
+                    writer.writerow([
+                        item.functional_id,
+                        item.alias_tag or '',
+                        item.title or '',
+                        item.type or '',
+                        item.module or '',
+                        item.epic or '',
+                        item.responsible_qa.name if item.responsible_qa else '',
+                        item.responsible_dev.name if item.responsible_dev else '',
+                        item.segment or '',
+                        '1' if item.is_crit else '0',
+                        '1' if item.is_focus else '0'
+                    ])
+            
+            QMessageBox.information(self, 'Успех', f'✅ Экспортировано: {len(self.current_items)} элементов')
+            self.statusBar().showMessage(f'✅ Экспорт в CSV: {file_path}')
+        except Exception as e:
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось экспортировать:\n{e}')
+    
+    def export_excel(self):
+        """Экспорт в Excel"""
+        QMessageBox.information(self, 'Excel Export', 'Экспорт в Excel будет реализован позже')
+    
+    def sync_zoho(self):
+        """Синхронизация с Zoho"""
+        QMessageBox.information(self, 'Zoho Sync', 'Синхронизация с Zoho будет реализована позже')
     
     def closeEvent(self, event):
         self.session.close()

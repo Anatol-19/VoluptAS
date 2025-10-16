@@ -11,9 +11,21 @@ import csv
 from src.db import SessionLocal
 from src.models import FunctionalItem, User
 
-def import_csv():
-    session = SessionLocal()
-    csv_path = project_root / 'data' / 'import' / 'voluptas_data.csv'
+def import_from_csv(csv_path, session=None):
+    """
+    Импорт из любого CSV файла
+    
+    Args:
+        csv_path: Путь к CSV файлу
+        session: Сессия SQLAlchemy (если None, создаётся новая)
+    
+    Returns:
+        int: Количество импортированных элементов
+    """
+    close_session = False
+    if session is None:
+        session = SessionLocal()
+        close_session = True
     
     print(f'📂 Читаем: {csv_path}')
     
@@ -77,26 +89,31 @@ def import_csv():
                     continue
                 
                 try:
-                    # Создаём элемент
+                    # Создаём элемент со ВСЕМИ полями
                     item = FunctionalItem(
                         functional_id=functional_id,
+                        alias_tag=row.get('Alias', '').strip() or row.get('Alias Tag', '').strip() or None,
                         title=title,
                         type=row.get('Type', '').strip() or None,
                         module=row.get('Module', '').strip() or None,
                         epic=row.get('Epic', '').strip() or None,
                         feature=row.get('Feature', '').strip() or None,
                         stories=row.get('Stories', '').strip() or None,
-                        segment=row.get('Segment ', '').strip() or None,  # Обратите внимание на пробел!
+                        segment=row.get('Segment', '').strip() or row.get('Segment ', '').strip() or None,
                         description=row.get('Description', '').strip() or None,
-                        tags=row.get('Tags and Aliases', '').strip() or None,
+                        tags=row.get('Tags and Aliases', '').strip() or row.get('Tags', '').strip() or None,
                         roles=row.get('Roles', '').strip() or None,
                         is_focus=1 if row.get('isFocus', '').strip().upper() == 'TRUE' else 0,
                         is_crit=1 if row.get('isCrit', '').strip().upper() == 'TRUE' else 0,
+                        # Покрытие
+                        test_cases_linked=row.get('Test Cases', '').strip() or row.get('Test Cases Linked', '').strip() or None,
                         automation_status=row.get('Automation Status', '').strip() or None,
+                        documentation_links=row.get('Documentation', '').strip() or row.get('Documentation Links', '').strip() or None,
+                        # INFRA
                         maturity=row.get('Maturity', '').strip() or None,
                         container=row.get('Container', '').strip() or None,
                         database=row.get('Database', '').strip() or None,
-                        subsystems_involved=row.get('Subsystems involved', '').strip() or None,
+                        subsystems_involved=row.get('Subsystems involved', '').strip() or row.get('Subsystems Involved', '').strip() or None,
                         external_services=row.get('External Services', '').strip() or None,
                     )
                     
@@ -144,11 +161,23 @@ def import_csv():
         print(f'  ❌ Ошибок: {stats["errors"]}')
         print('='*60)
         
+        return stats['imported']
+        
     except Exception as e:
         print(f'❌ Критическая ошибка: {e}')
         session.rollback()
+        return 0
     finally:
-        session.close()
+        if close_session:
+            session.close()
+
+
+def import_csv():
+    """Импорт из стандартного места (data/import/voluptas_data.csv)"""
+    csv_path = project_root / 'data' / 'import' / 'voluptas_data.csv'
+    print(f'📂 Читаем: {csv_path}')
+    import_from_csv(str(csv_path))
+
 
 if __name__ == '__main__':
     import_csv()

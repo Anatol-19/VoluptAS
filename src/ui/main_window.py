@@ -59,40 +59,21 @@ class MainWindow(QMainWindow):
     
     def _create_central_widget(self):
         """
-        Создание центрального виджета с базовым layout
+        Создание центрального виджета с табами
         
-        В Инкременте 0 - просто placeholder с приветствием
-        В Инкременте 2 добавим таблицу
+        Новая архитектура: 5 табов для разных представлений
         """
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
+        from src.ui.widgets.main_tabs_widget import MainTabsWidget
         
-        # Главный layout
-        main_layout = QVBoxLayout()
-        central_widget.setLayout(main_layout)
+        # Создание главного виджета с табами
+        self.main_tabs = MainTabsWidget()
+        self.setCentralWidget(self.main_tabs)
         
-        # Placeholder - приветственное сообщение
-        welcome_label = QLabel(
-            "<h1>Добро пожаловать в VoluptAS!</h1>"
-            "<p>Универсальный инструмент для управления функционалом и покрытием QA</p>"
-            "<hr>"
-            "<p><b>Статус:</b> Инкремент 0 завершён ✓</p>"
-            "<p><b>Следующий шаг:</b> Инкремент 1 - Модель данных + SQLite</p>"
-            "<hr>"
-            "<p>Функционал появится в следующих инкрементах:</p>"
-            "<ul>"
-            "<li>Таблица функциональных элементов</li>"
-            "<li>CRUD операции</li>"
-            "<li>Фильтрация и поиск</li>"
-            "<li>Матрица покрытия</li>"
-            "<li>Граф связей</li>"
-            "<li>Экспорт в различные форматы</li>"
-            "</ul>"
-        )
-        welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        welcome_label.setWordWrap(True)
+        # Подключение сигналов
+        self.main_tabs.tab_changed.connect(self._on_tab_changed)
         
-        main_layout.addWidget(welcome_label)
+        # Настройка горячих клавиш (Ctrl+1/2/3/4/5)
+        self.main_tabs.setup_hotkeys()
     
     def _create_menu_bar(self):
         """
@@ -164,6 +145,16 @@ class MainWindow(QMainWindow):
             "<li>SQLAlchemy</li>"
             "</ul>"
         )
+    
+    def _on_tab_changed(self, index: int, tab_name: str):
+        """
+        Обработка смены таба
+        
+        Args:
+            index: Индекс нового таба
+            tab_name: Название таба
+        """
+        self.statusBar().showMessage(f"Активная вкладка: {tab_name}")
     
     def closeEvent(self, event):
         """
