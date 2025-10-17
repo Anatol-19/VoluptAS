@@ -679,6 +679,26 @@ class MainWindow(QMainWindow):
         # Меню "Инструменты"
         tools_menu = menubar.addMenu('🔧 Инструменты')
         
+        # BDD Feature генерация
+        bdd_manager_action = QAction('🧑‍💻 BDD Feature Manager', self)
+        bdd_manager_action.triggered.connect(self.open_bdd_manager)
+        tools_menu.addAction(bdd_manager_action)
+        
+        generate_bdd_action = QAction('🛠️ Генерация BDD Features', self)
+        generate_bdd_action.setShortcut('Ctrl+B')
+        generate_bdd_action.triggered.connect(self.generate_bdd_features)
+        tools_menu.addAction(generate_bdd_action)
+        
+        tools_menu.addSeparator()
+        
+        # Граф связей
+        graph_action = QAction('🔗 Граф связей', self)
+        graph_action.setShortcut('Ctrl+G')
+        graph_action.triggered.connect(self.open_graph_view)
+        tools_menu.addAction(graph_action)
+        
+        tools_menu.addSeparator()
+        
         sync_menu = tools_menu.addMenu('🔄 Синхронизация')
         
         sync_zoho_action = QAction('Zoho', self)
