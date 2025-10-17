@@ -1396,6 +1396,12 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
+    # Инициализировать БД при первом запуске
+    from src.db.database import init_db, DATABASE_PATH
+    if not DATABASE_PATH.exists() or DATABASE_PATH.stat().st_size == 0:
+        print(f'⚠️  БД не найдена или пуста, инициализирую...')
+        init_db()
+    
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     window = MainWindow()

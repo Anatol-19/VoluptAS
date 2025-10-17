@@ -31,7 +31,10 @@ def get_db():
         db.close()
 
 def init_db():
-    from src.models import functional_item, user
+    """ Инициализация базы данных - создание всех таблиц """
+    # Импортируем ВСЕ модели для создания таблиц
+    from src.models import functional_item, user, relation, dictionary
     Base.metadata.create_all(bind=engine)
     print(f'✅ База данных инициализирована: {DATABASE_PATH}')
+    print(f'   Таблицы: functional_items, users, functional_item_relations, dictionaries')
 
