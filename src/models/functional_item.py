@@ -93,7 +93,18 @@ class FunctionalItem(Base):
     accountable = relationship("User", foreign_keys=[accountable_id])
     
     # Иерархические relationships
-    parent = relationship("FunctionalItem", remote_side=[id], backref="children")
+    # Cascade на parent (one-to-many): при удалении parent удаляются children
+    parent = relationship(
+        "FunctionalItem",
+        remote_side=[id],
+        back_populates="children"
+    )
+    children = relationship(
+        "FunctionalItem",
+        back_populates="parent",
+        cascade="all, delete-orphan",
+        foreign_keys=[parent_id]
+    )
     
     # ПРИМЕЧАНИЕ: Связи теперь управляются через модель Relation
     # related_items доступны через outgoing_relations и incoming_relations
