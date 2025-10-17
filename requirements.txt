@@ -30,7 +30,6 @@ gherkin-official==26.2.0
 
 # Markdown
 markdown==3.5.1
-python-markdown2==2.4.12
 
 # Testing
 pytest==7.4.3
