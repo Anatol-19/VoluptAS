@@ -9,6 +9,7 @@ from PyQt6.QtGui import QAction
 from src.db import SessionLocal
 from src.models import FunctionalItem, User
 from src.utils.role_filter import RoleFilter
+from src.utils.version import get_version_banner
 
 
 # === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
@@ -611,7 +612,8 @@ class MainWindow(QMainWindow):
         self.load_data()
     
     def init_ui(self):
-        self.setWindowTitle('VoluptAS - Functional Coverage Management')
+        banner = get_version_banner(project_root)
+        self.setWindowTitle(f'VoluptAS {banner} - Functional Coverage Management')
         self.setGeometry(100, 100, 1400, 900)
         
         # === НОВОЕ МЕНЮ ===
@@ -867,6 +869,8 @@ class MainWindow(QMainWindow):
         self.tabs.currentChanged.connect(self.on_tab_changed)
         
         self.statusBar().showMessage('Готов')
+        # Печатаем баннер и путь запуска в консоль для быстрой диагностики
+        print(f"[VoluptAS] {banner} | root={project_root}")
     
     def load_data(self):
         self.current_items = self.session.query(FunctionalItem).order_by(FunctionalItem.functional_id).all()
