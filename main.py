@@ -1,7 +1,22 @@
 import sys
+import logging
 from pathlib import Path
 project_root = Path(__file__).resolve().parent
 sys.path.insert(0, str(project_root))
+
+# Настройка логирования
+log_file = project_root / 'voluptas.log'
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
+logger.info(f"="*60)
+logger.info(f"VoluptAS starting... Working directory: {project_root}")
 
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
