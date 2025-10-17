@@ -255,6 +255,19 @@ class ZohoAPI:
         url = f"{self.base_url}/portals/"
         return self.send_request(url)
 
+    def get_projects(self) -> list[dict]:
+        """
+        Получает список всех проектов в портале.
+        :return list[dict]: Список проектов или пустой список в случае ошибки.
+        """
+        # URL для получения списка проектов в портале
+        url = f"{self.base_url}/projects/"
+        response = self.send_request(url)
+        if response is None:
+            print("❌ Не удалось получить список проектов. Проверьте права доступа.")
+            return []
+        return response.get("projects", [])
+
 
     def get_entities_by_filter(self, entity_type: str,
                                created_after: str = None,
