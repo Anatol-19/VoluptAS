@@ -1,22 +1,44 @@
 import sys
 import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 project_root = Path(__file__).resolve().parent
 sys.path.insert(0, str(project_root))
 
-# Настройка логирования
-log_file = project_root / 'voluptas.log'
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-    handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ]
+# Настройка логирования с ротацией
+log_dir = project_root / 'logs'
+log_dir.mkdir(exist_ok=True)
+log_file = log_dir / 'voluptas.log'
+
+# Ротация: максимум 10 MB на файл, 5 backup файлов
+file_handler = RotatingFileHandler(
+    log_file, 
+    maxBytes=10*1024*1024,  # 10 MB
+    backupCount=5,
+    encoding='utf-8'
 )
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s [%(levelname)-8s] %(name)s:%(lineno)d - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+))
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter(
+    '%(asctime)s [%(levelname)-8s] %(message)s',
+    datefmt='%H:%M:%S'
+))
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    handlers=[file_handler, console_handler]
+)
+
 logger = logging.getLogger(__name__)
-logger.info(f"="*60)
+logger.info("="*60)
 logger.info(f"VoluptAS starting... Working directory: {project_root}")
+logger.info(f"Log file: {log_file}")
 
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
