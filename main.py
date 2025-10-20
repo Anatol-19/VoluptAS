@@ -666,25 +666,21 @@ class MainWindow(QMainWindow):
         
         file_menu.addSeparator()
         
-        # Подменю "Экспорт"
-        export_menu = file_menu.addMenu('📤 Экспорт')
+        # Синхронизация с Google Sheets
+        google_sync_action = QAction('☁️ Синхронизация Google Sheets', self)
+        google_sync_action.setShortcut('Ctrl+G')
+        google_sync_action.triggered.connect(self.open_google_sync)
+        file_menu.addAction(google_sync_action)
         
-        export_csv_action = QAction('CSV', self)
+        file_menu.addSeparator()
+        
+        # Экспорт CSV
+        export_csv_action = QAction('📤 Экспорт CSV', self)
         export_csv_action.triggered.connect(self.export_csv)
-        export_menu.addAction(export_csv_action)
+        file_menu.addAction(export_csv_action)
         
-        export_excel_action = QAction('Excel', self)
-        export_excel_action.triggered.connect(self.export_excel)
-        export_menu.addAction(export_excel_action)
-        
-        export_menu.addSeparator()
-        
-        export_google_action = QAction('📊 Google Sheets', self)
-        export_google_action.triggered.connect(self.export_google_sheets)
-        export_menu.addAction(export_google_action)
-        
-        # Импорт
-        import_action = QAction('📥 Импорт', self)
+        # Импорт CSV
+        import_action = QAction('📥 Импорт CSV', self)
         import_action.triggered.connect(self.import_data)
         file_menu.addAction(import_action)
         
@@ -1382,11 +1378,11 @@ class MainWindow(QMainWindow):
             self.session.rollback()
             QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
     
-    def export_google_sheets(self):
-        """Экспорт в Google Sheets"""
-        from src.ui.dialogs.google_export_dialog import GoogleExportDialog
+    def open_google_sync(self):
+        """Открыть синхронизацию Google Sheets"""
+        from src.ui.dialogs.google_sync_simple import GoogleSheetsSyncDialog
         
-        dialog = GoogleExportDialog(self.session, self)
+        dialog = GoogleSheetsSyncDialog(self.session, self)
         dialog.exec()
     
     def import_data(self):
