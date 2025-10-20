@@ -666,23 +666,25 @@ class MainWindow(QMainWindow):
         
         file_menu.addSeparator()
         
-        # Синхронизация с Google Sheets
-        google_sync_action = QAction('☁️ Синхронизация Google Sheets', self)
-        google_sync_action.setShortcut('Ctrl+G')
-        google_sync_action.triggered.connect(self.open_google_sync)
-        file_menu.addAction(google_sync_action)
+        # Экспорт
+        export_google_action = QAction('📤 Экспорт Google Sheets', self)
+        export_google_action.triggered.connect(self.export_google_sheets)
+        file_menu.addAction(export_google_action)
         
-        file_menu.addSeparator()
-        
-        # Экспорт CSV
         export_csv_action = QAction('📤 Экспорт CSV', self)
         export_csv_action.triggered.connect(self.export_csv)
         file_menu.addAction(export_csv_action)
         
-        # Импорт CSV
-        import_action = QAction('📥 Импорт CSV', self)
-        import_action.triggered.connect(self.import_data)
-        file_menu.addAction(import_action)
+        file_menu.addSeparator()
+        
+        # Импорт
+        import_google_action = QAction('📥 Импорт Google Sheets', self)
+        import_google_action.triggered.connect(self.import_google_sheets)
+        file_menu.addAction(import_google_action)
+        
+        import_csv_action = QAction('📥 Импорт CSV', self)
+        import_csv_action.triggered.connect(self.import_data)
+        file_menu.addAction(import_csv_action)
         
         file_menu.addSeparator()
         
@@ -1378,12 +1380,19 @@ class MainWindow(QMainWindow):
             self.session.rollback()
             QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
     
-    def open_google_sync(self):
-        """Открыть синхронизацию Google Sheets"""
-        from src.ui.dialogs.google_sync_simple import GoogleSheetsSyncDialog
-        
-        dialog = GoogleSheetsSyncDialog(self.session, self)
+    def export_google_sheets(self):
+        """Экспорт в Google Sheets"""
+        from src.ui.dialogs.google_export_simple import GoogleExportSimpleDialog
+        dialog = GoogleExportSimpleDialog(self.session, self)
         dialog.exec()
+    
+    def import_google_sheets(self):
+        """Импорт из Google Sheets"""
+        QMessageBox.information(
+            self,
+            'В разработке',
+            'Импорт из Google Sheets будет реализован в следующей версии'
+        )
     
     def import_data(self):
         """Импорт данных (CSV)"""
