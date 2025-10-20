@@ -51,7 +51,11 @@ class GoogleSheetsClient:
 
     def _open_or_create_sheet(self, sheet_name: str):
         try:
-            return self.spreadsheet.worksheet(sheet_name)
+            sheet = self.spreadsheet.worksheet(sheet_name)
+            # Очищаем существующий лист перед экспортом
+            print(f"[INFO] Лист '{sheet_name}' найден. Очищаем...")
+            sheet.clear()
+            return sheet
         except WorksheetNotFound:
             print(f"[INFO] Лист '{sheet_name}' не найден. Создаём новый.")
             return self.spreadsheet.add_worksheet(title=sheet_name, rows=100, cols=30)

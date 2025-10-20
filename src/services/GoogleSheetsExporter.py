@@ -155,8 +155,8 @@ class GoogleSheetsExporter:
                 'Name': user.name or '',
                 'Position': user.position or '',
                 'Email': user.email or '',
-                'Role': user.role or '',
                 'Zoho ID': user.zoho_id or '',
+                'GitHub': user.github_username or '',
                 'Active': 'Да' if user.is_active else 'Нет',
             }
             self.client.append_result(row_data)
