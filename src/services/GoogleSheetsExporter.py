@@ -184,6 +184,7 @@ class GoogleSheetsExporter:
             source = self.session.query(FunctionalItem).get(rel.source_id)
             target = self.session.query(FunctionalItem).get(rel.target_id)
             
+            metadata = rel.get_metadata()
             row_data = {
                 'Source ID': rel.source_id,
                 'Source FuncID': source.functional_id if source else '',
@@ -192,7 +193,10 @@ class GoogleSheetsExporter:
                 'Target FuncID': target.functional_id if target else '',
                 'Target Title': target.title if target else '',
                 'Type': rel.type or 'hierarchy',
-                'Description': rel.description or '',
+                'Weight': rel.weight or 1.0,
+                'Directed': 'Да' if rel.directed else 'Нет',
+                'Active': 'Да' if rel.active else 'Нет',
+                'Notes': metadata.get('notes', '') or '',
             }
             self.client.append_result(row_data)
         
