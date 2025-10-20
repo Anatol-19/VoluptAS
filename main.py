@@ -666,10 +666,24 @@ class MainWindow(QMainWindow):
         
         file_menu.addSeparator()
         
-        export_action = QAction('📤 Экспорт', self)
-        export_action.triggered.connect(self.export_data)
-        file_menu.addAction(export_action)
+        # Подменю "Экспорт"
+        export_menu = file_menu.addMenu('📤 Экспорт')
         
+        export_csv_action = QAction('CSV', self)
+        export_csv_action.triggered.connect(self.export_csv)
+        export_menu.addAction(export_csv_action)
+        
+        export_excel_action = QAction('Excel', self)
+        export_excel_action.triggered.connect(self.export_excel)
+        export_menu.addAction(export_excel_action)
+        
+        export_menu.addSeparator()
+        
+        export_google_action = QAction('📊 Google Sheets', self)
+        export_google_action.triggered.connect(self.export_google_sheets)
+        export_menu.addAction(export_google_action)
+        
+        # Импорт
         import_action = QAction('📥 Импорт', self)
         import_action.triggered.connect(self.import_data)
         file_menu.addAction(import_action)
@@ -1343,23 +1357,12 @@ class MainWindow(QMainWindow):
             self.session.rollback()
             QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
     
-    def export_data(self):
-        """Экспорт данных (CSV или Excel)"""
-        reply = QMessageBox.question(
-            self, 'Экспорт',
-            'Выберите формат экспорта:\n\n'
-            'Yes - CSV\n'
-            'No - Excel',
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel
-        )
+    def export_google_sheets(self):
+        """Экспорт в Google Sheets"""
+        from src.ui.dialogs.google_export_dialog import GoogleExportDialog
         
-        if reply == QMessageBox.StandardButton.Cancel:
-            return
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            self.export_csv()
-        else:
-            self.export_excel()
+        dialog = GoogleExportDialog(self.session, self)
+        dialog.exec()
     
     def import_data(self):
         """Импорт данных (CSV)"""
