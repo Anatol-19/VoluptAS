@@ -742,6 +742,13 @@ class MainWindow(QMainWindow):
         
         tools_menu.addSeparator()
         
+        # Шаблоны отчётов
+        report_templates_action = QAction('📋 Шаблоны отчётов', self)
+        report_templates_action.triggered.connect(self.open_report_templates)
+        tools_menu.addAction(report_templates_action)
+        
+        tools_menu.addSeparator()
+        
         # Граф связей
         graph_action = QAction('🔗 Граф связей', self)
         graph_action.setShortcut('Ctrl+G')
@@ -1291,6 +1298,12 @@ class MainWindow(QMainWindow):
         """Открыть BDD Feature Manager"""
         from src.ui.dialogs.bdd_manager import BDDFeatureManager
         manager = BDDFeatureManager(self)
+        manager.show()
+    
+    def open_report_templates(self):
+        """Открыть менеджер шаблонов отчётов"""
+        from src.ui.dialogs.report_template_editor import TemplateManagerDialog
+        manager = TemplateManagerDialog(self.session, self)
         manager.show()
     
     def generate_bdd_features(self):
