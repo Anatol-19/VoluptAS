@@ -40,6 +40,8 @@ class GoogleSheetsClient:
         self.spreadsheet = self.client.open_by_key(self.spreadsheet_id)
         self.sheet = self._open_or_create_sheet(worksheet_name)
         self._batch_rows: List[List[Any]] = []
+        self._headers_inserted = False  # Флаг вставки заголовков
+        self._current_headers: List[str] = []  # Кэш заголовков
 
     def _authorize(self):
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -134,29 +136,28 @@ class GoogleSheetsClient:
         """
         Получает текущие заголовки из таблицы. Если заголовки отсутствуют — создаёт их на основе переданных данных.
         Также добавляет новые столбцы, если в data появились новые ключи.
+        
+        Использует кэш для избежания повторных вставок.
 
         :param data: Словарь, где ключ — имя столбца, значение — значение ячейки.
         :return: Обновлённый список заголовков в порядке, в котором они будут использоваться в таблице.
         """
-        try:
-            current_headers = self.sheet.row_values(1)
-        except APIError:
-            current_headers = []
-
-        if not current_headers:
-            # Первая запись — заголовки по ключам из data
-            headers = list(data.keys())
-            self.sheet.insert_row(headers, index=1)
-            return headers
-
-        # Проверка на новые поля, которых ещё нет в таблице
-        missing_headers = [key for key in data.keys() if key not in current_headers]
-        if missing_headers:
-            updated_headers = current_headers + missing_headers
-            self.sheet.update('1:1', [updated_headers])
-            return updated_headers
-
-        return current_headers
+        # Если заголовки уже вставлены — используем кэш
+        if self._headers_inserted:
+            # Проверяем на новые поля
+            missing_headers = [key for key in data.keys() if key not in self._current_headers]
+            if missing_headers:
+                self._current_headers.extend(missing_headers)
+                self.sheet.update('1:1', [self._current_headers])
+            return self._current_headers
+        
+        # Первая вставка заголовков
+        headers = list(data.keys())
+        self.sheet.insert_row(headers, index=1)
+        self._current_headers = headers
+        self._headers_inserted = True
+        print(f"[INFO] Заголовки вставлены: {len(headers)} колонок")
+        return headers
 
     def _normalize_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
