@@ -92,6 +92,12 @@ class GoogleSheetsExporter:
         # Получение данных из БД
         query = self.session.query(FunctionalItem)
         
+        # Проверка: если БД пустая - не создавать клиент (не очищать листы)
+        total_count = query.count()
+        if total_count == 0:
+            logger.warning(f"⚠️ БД пустая, пропускаем экспорт '{sheet_name}'")
+            return 0
+        
         # Применение фильтров
         if filters:
             if filters.get('type'):
@@ -140,14 +146,18 @@ class GoogleSheetsExporter:
         """Экспорт пользователей"""
         logger.info(f"👥 Экспорт users в лист '{sheet_name}'")
         
+        users = self.session.query(User).filter(User.is_active == True).all()
+        logger.info(f"   Найдено пользователей: {len(users)}")
+        
+        if len(users) == 0:
+            logger.warning(f"⚠️ Нет пользователей, пропускаем экспорт '{sheet_name}'")
+            return 0
+        
         self.client = GoogleSheetsClient(
             credentials_path=self.credentials_path,
             spreadsheet_id=spreadsheet_id,
             worksheet_name=sheet_name
         )
-        
-        users = self.session.query(User).filter(User.is_active == True).all()
-        logger.info(f"   Найдено пользователей: {len(users)}")
         
         for user in users:
             row_data = {
@@ -170,14 +180,18 @@ class GoogleSheetsExporter:
         """Экспорт связей между элементами"""
         logger.info(f"🔗 Экспорт relations в лист '{sheet_name}'")
         
+        relations = self.session.query(Relation).all()
+        logger.info(f"   Найдено связей: {len(relations)}")
+        
+        if len(relations) == 0:
+            logger.warning(f"⚠️ Нет связей, пропускаем экспорт '{sheet_name}'")
+            return 0
+        
         self.client = GoogleSheetsClient(
             credentials_path=self.credentials_path,
             spreadsheet_id=spreadsheet_id,
             worksheet_name=sheet_name
         )
-        
-        relations = self.session.query(Relation).all()
-        logger.info(f"   Найдено связей: {len(relations)}")
         
         for rel in relations:
             # Получаем элементы для вывода названий

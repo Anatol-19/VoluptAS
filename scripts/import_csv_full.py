@@ -74,7 +74,8 @@ def import_from_csv(csv_path, session=None):
             for row in reader:
                 stats['total'] += 1
                 
-                functional_id = row.get('Functional ID', '').strip()
+                # Поддержка разных форматов CSV
+                functional_id = (row.get('Functional ID', '') or row.get('FuncID', '')).strip()
                 title = row.get('Title', '').strip()
                 
                 # Пропускаем пустые строки
@@ -103,8 +104,8 @@ def import_from_csv(csv_path, session=None):
                         description=row.get('Description', '').strip() or None,
                         tags=row.get('Tags and Aliases', '').strip() or row.get('Tags', '').strip() or None,
                         roles=row.get('Roles', '').strip() or None,
-                        is_focus=1 if row.get('isFocus', '').strip().upper() == 'TRUE' else 0,
-                        is_crit=1 if row.get('isCrit', '').strip().upper() == 'TRUE' else 0,
+                        is_focus=1 if (row.get('isFocus', '') or row.get('Focus', '')).strip() in ['TRUE', '1', 'Yes', 'Да'] else 0,
+                        is_crit=1 if (row.get('isCrit', '') or row.get('Crit', '')).strip() in ['TRUE', '1', 'Yes', 'Да'] else 0,
                         # Покрытие
                         test_cases_linked=row.get('Test Cases', '').strip() or row.get('Test Cases Linked', '').strip() or None,
                         automation_status=row.get('Automation Status', '').strip() or None,
@@ -117,9 +118,9 @@ def import_from_csv(csv_path, session=None):
                         external_services=row.get('External Services', '').strip() or None,
                     )
                     
-                    # Ответственные
-                    qa_name = row.get('Responsible (QA)', '').strip()
-                    dev_name = row.get('Responsible (Dev)', '').strip()
+                    # Ответственные (поддержка обоих форматов)
+                    qa_name = (row.get('Responsible (QA)', '') or row.get('QA', '')).strip()
+                    dev_name = (row.get('Responsible (Dev)', '') or row.get('Dev', '')).strip()
                     accountable_name = row.get('Accountable', '').strip()
                     
                     if qa_name:
