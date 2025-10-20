@@ -1388,11 +1388,12 @@ class MainWindow(QMainWindow):
     
     def import_google_sheets(self):
         """Импорт из Google Sheets"""
-        QMessageBox.information(
-            self,
-            'В разработке',
-            'Импорт из Google Sheets будет реализован в следующей версии'
-        )
+        from src.ui.dialogs.google_import_simple import GoogleImportSimpleDialog
+        dialog = GoogleImportSimpleDialog(self.session, self)
+        if dialog.exec():
+            # Обновляем таблицу после импорта
+            self.load_data()
+            self.statusBar().showMessage('✅ Данные импортированы из Google Sheets')
     
     def import_data(self):
         """Импорт данных (CSV)"""
