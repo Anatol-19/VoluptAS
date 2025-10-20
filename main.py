@@ -747,6 +747,12 @@ class MainWindow(QMainWindow):
         report_templates_action.triggered.connect(self.open_report_templates)
         tools_menu.addAction(report_templates_action)
         
+        # Генератор отчётов
+        report_generator_action = QAction('📊 Генератор отчётов', self)
+        report_generator_action.setShortcut('Ctrl+R')
+        report_generator_action.triggered.connect(self.open_report_generator)
+        tools_menu.addAction(report_generator_action)
+        
         tools_menu.addSeparator()
         
         # Граф связей
@@ -1305,6 +1311,12 @@ class MainWindow(QMainWindow):
         from src.ui.dialogs.report_template_editor import TemplateManagerDialog
         manager = TemplateManagerDialog(self.session, self)
         manager.show()
+    
+    def open_report_generator(self):
+        """Открыть генератор отчётов"""
+        from src.ui.dialogs.report_generator_dialog import ReportGeneratorDialog
+        dialog = ReportGeneratorDialog(self.session, self)
+        dialog.exec()
     
     def generate_bdd_features(self):
         """Генерация BDD Feature файлов"""
