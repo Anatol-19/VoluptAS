@@ -33,8 +33,8 @@ def get_db():
 def init_db():
     """ Инициализация базы данных - создание всех таблиц """
     # Импортируем ВСЕ модели для создания таблиц
-    from src.models import functional_item, user, relation, dictionary
+    from src.models import functional_item, user, relation, dictionary, zoho_task
     Base.metadata.create_all(bind=engine)
     print(f'✅ База данных инициализирована: {DATABASE_PATH}')
-    print(f'   Таблицы: functional_items, users, functional_item_relations, dictionaries')
+    print(f'   Таблицы: functional_items, users, functional_item_relations, dictionaries, zoho_tasks')
 
