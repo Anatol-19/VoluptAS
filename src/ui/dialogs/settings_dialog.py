@@ -91,11 +91,13 @@ class SettingsDialog(QDialog):
         self.project_root = Path(__file__).resolve().parent.parent.parent.parent
         self.zoho_env_path = self.project_root / 'credentials' / 'zoho.env'
         self.google_json_path = self.project_root / 'credentials' / 'google_credentials.json'
-        # Fallback на service_account.json если google_credentials.json не найден
+        # Fallback на альтернативные имена, если основной не найден
         if not self.google_json_path.exists():
-            fallback = self.project_root / 'credentials' / 'service_account.json'
-            if fallback.exists():
-                self.google_json_path = fallback
+            for alt_name in ['google_service_account.json', 'service_account.json']:
+                fallback = self.project_root / 'credentials' / alt_name
+                if fallback.exists():
+                    self.google_json_path = fallback
+                    break
         self.qase_env_path = self.project_root / 'credentials' / 'qase.env'
         
         # Потоки

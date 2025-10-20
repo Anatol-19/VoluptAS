@@ -84,18 +84,19 @@ class GoogleExportDialog(QDialog):
         gs_group = QGroupBox('Google Sheets')
         gs_layout = QFormLayout(gs_group)
         
-        # Service Account JSON
+        # Service Account JSON (используется централизованно из настроек)
         self.credentials_path_edit = QLineEdit()
+        self.credentials_path_edit.setReadOnly(True)
         project_root = Path(__file__).resolve().parent.parent.parent.parent
-        default_creds = project_root / 'credentials' / 'service_account.json'
+        default_creds = project_root / 'credentials' / 'google_credentials.json'
         self.credentials_path_edit.setText(str(default_creds))
         
-        creds_btn = QPushButton('📂 Выбрать')
-        creds_btn.clicked.connect(self.select_credentials)
+        creds_btn = QPushButton('🔒 Управлять в настройках')
+        creds_btn.clicked.connect(self.open_settings)
         creds_layout = QHBoxLayout()
         creds_layout.addWidget(self.credentials_path_edit)
         creds_layout.addWidget(creds_btn)
-        gs_layout.addRow('Service Account:', creds_layout)
+        gs_layout.addRow('Credentials JSON:', creds_layout)
         
         # Spreadsheet ID
         self.spreadsheet_id_edit = QLineEdit()
@@ -177,16 +178,11 @@ class GoogleExportDialog(QDialog):
         # Начальное состояние
         self.on_export_type_changed(self.export_type_combo.currentText())
     
-    def select_credentials(self):
-        """Выбор service_account.json"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            'Выберите service_account.json',
-            '',
-            'JSON Files (*.json);;All Files (*)'
-        )
-        if file_path:
-            self.credentials_path_edit.setText(file_path)
+    def open_settings(self):
+        """Открыть единые настройки для управления Google JSON"""
+        from .settings_dialog import SettingsDialog
+        dlg = SettingsDialog(self)
+        dlg.exec()
     
     def load_qa_users(self):
         """Загрузка списка QA из БД"""
@@ -237,16 +233,26 @@ class GoogleExportDialog(QDialog):
     def start_export(self):
         """Начать экспорт"""
         # Валидация
-        credentials_path = self.credentials_path_edit.text().strip()
-        spreadsheet_id = self.spreadsheet_id_edit.text().strip()
+        project_root = Path(__file__).resolve().parent.parent.parent.parent
+        creds_primary = project_root / 'credentials' / 'google_credentials.json'
+        creds_alt1 = project_root / 'credentials' / 'google_service_account.json'
+        creds_alt2 = project_root / 'credentials' / 'service_account.json'
         
-        if not credentials_path or not Path(credentials_path).exists():
+        if creds_primary.exists():
+            credentials_path = str(creds_primary)
+        elif creds_alt1.exists():
+            credentials_path = str(creds_alt1)
+        elif creds_alt2.exists():
+            credentials_path = str(creds_alt2)
+        else:
             QMessageBox.warning(
-                self, 
-                'Ошибка', 
-                'Укажите корректный путь к service_account.json'
+                self,
+                'Ошибка',
+                'Не найден Google credentials JSON. Заполните в Настройки → Google API.'
             )
             return
+        
+        spreadsheet_id = self.spreadsheet_id_edit.text().strip()
         
         if not spreadsheet_id:
             QMessageBox.warning(self, 'Ошибка', 'Укажите Spreadsheet ID')

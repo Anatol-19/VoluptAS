@@ -148,16 +148,25 @@ class GoogleExportSimpleDialog(QDialog):
             QMessageBox.warning(self, 'Ошибка', 'Укажите корректный URL таблицы')
             return
         
-        # Проверяем credentials
+        # Проверяем credentials (используем единый путь из настроек)
         project_root = Path(__file__).resolve().parent.parent.parent.parent
-        creds_path = project_root / 'credentials' / 'service_account.json'
+        creds_primary = project_root / 'credentials' / 'google_credentials.json'
+        creds_alt1 = project_root / 'credentials' / 'google_service_account.json'
+        creds_alt2 = project_root / 'credentials' / 'service_account.json'
         
-        if not creds_path.exists():
+        if creds_primary.exists():
+            creds_path = creds_primary
+        elif creds_alt1.exists():
+            creds_path = creds_alt1
+        elif creds_alt2.exists():
+            creds_path = creds_alt2
+        else:
             QMessageBox.critical(
                 self,
                 'Ошибка',
-                'Файл service_account.json не найден!\n\n'
-                'Настройте credentials в:\nНастройки → Google API'
+                'Не найден файл с Google credentials!\n\n'
+                'Заполните JSON в Настройки → Google API.\n'
+                'Ожидаемое имя: credentials/google_credentials.json'
             )
             return
         

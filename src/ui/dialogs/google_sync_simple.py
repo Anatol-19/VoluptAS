@@ -171,10 +171,14 @@ class GoogleSheetsSyncDialog(QDialog):
         """Загрузка сохранённых настроек"""
         # TODO: Загрузить из конфига
         project_root = Path(__file__).resolve().parent.parent.parent.parent
-        default_creds = project_root / 'credentials' / 'service_account.json'
+        primary = project_root / 'credentials' / 'google_credentials.json'
+        alt1 = project_root / 'credentials' / 'google_service_account.json'
+        alt2 = project_root / 'credentials' / 'service_account.json'
         
-        if default_creds.exists():
-            self.credentials_path_edit.setText(str(default_creds))
+        for p in [primary, alt1, alt2]:
+            if p.exists():
+                self.credentials_path_edit.setText(str(p))
+                break
     
     def select_credentials(self):
         """Выбор файла credentials"""
