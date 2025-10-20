@@ -1434,10 +1434,35 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     # Инициализировать БД при первом запуске
-    from src.db.database import init_db, DATABASE_PATH
+    from src.db.database import init_db, DATABASE_PATH, engine
+    from sqlalchemy import inspect
+    
+    db_needs_init = False
+    
+    # Проверяем существование файла БД
     if not DATABASE_PATH.exists() or DATABASE_PATH.stat().st_size == 0:
-        print(f'⚠️  БД не найдена или пуста, инициализирую...')
+        logger.warning(f'⚠️  БД не найдена или пуста: {DATABASE_PATH}')
+        db_needs_init = True
+    else:
+        # Проверяем наличие таблиц
+        try:
+            inspector = inspect(engine)
+            tables = inspector.get_table_names()
+            required_tables = ['functional_items', 'users', 'functional_item_relations', 'dictionaries']
+            missing_tables = [t for t in required_tables if t not in tables]
+            if missing_tables:
+                logger.warning(f'⚠️  Отсутствуют таблицы: {missing_tables}')
+                db_needs_init = True
+        except Exception as e:
+            logger.error(f'❌ Ошибка проверки БД: {e}')
+            db_needs_init = True
+    
+    if db_needs_init:
+        logger.info('⚙️  Инициализирую БД...')
         init_db()
+        logger.info('✅ БД инициализирована')
+    else:
+        logger.info(f'✅ БД готова: {DATABASE_PATH}')
     
     app = QApplication(sys.argv)
     app.setStyle('Fusion')

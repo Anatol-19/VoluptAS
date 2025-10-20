@@ -42,3 +42,9 @@ if (Test-Path "requirements.txt") {
 }
 
 Write-Host "Bootstrap complete."
+Write-Host ""
+Write-Host "== Next Steps =="
+Write-Host "1. Запустите приложение: python main.py"
+Write-Host "2. БД будет автоматически инициализирована при первом запуске"
+Write-Host "3. Для восстановления данных: python scripts/restore_data.py"
+Write-Host ""

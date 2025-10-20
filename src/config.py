@@ -18,13 +18,12 @@ class Config:
     # Базовые пути
     BASE_DIR = Path(__file__).parent.parent
     DATA_DIR = BASE_DIR / "data"
-    DB_DIR = DATA_DIR / "db"
     EXPORT_DIR = DATA_DIR / "export"
     IMPORT_DIR = DATA_DIR / "import"
     
-    # База данных
+    # База данных (унифицированный путь с database.py)
     DB_NAME = "voluptas.db"
-    DB_PATH = DB_DIR / DB_NAME
+    DB_PATH = DATA_DIR / DB_NAME
     DB_URI = f"sqlite:///{DB_PATH}"
     
     # Справочники теперь хранятся в БД (таблица dictionaries)
@@ -59,7 +58,7 @@ class Config:
         """
         Создание необходимых директорий если их нет
         """
-        for directory in [self.DATA_DIR, self.DB_DIR, self.EXPORT_DIR, self.IMPORT_DIR]:
+        for directory in [self.DATA_DIR, self.EXPORT_DIR, self.IMPORT_DIR]:
             directory.mkdir(parents=True, exist_ok=True)
     
     def get_db_uri(self) -> str:
