@@ -31,14 +31,15 @@ class GoogleSheetsClient:
         self,
         credentials_path: str,
         spreadsheet_id: str,
-        worksheet_name: str
+        worksheet_name: str,
+        clear_on_open: bool = True  # Очищать лист при открытии (для экспорта)
     ):
         self.credentials_path = credentials_path
         self.spreadsheet_id = spreadsheet_id
         self.worksheet_name = worksheet_name
         self.client = self._authorize()
         self.spreadsheet = self.client.open_by_key(self.spreadsheet_id)
-        self.sheet = self._open_or_create_sheet(worksheet_name)
+        self.sheet = self._open_or_create_sheet(worksheet_name, clear_on_open)
         self._batch_rows: List[List[Any]] = []
         self._headers_inserted = False  # Флаг вставки заголовков
         self._current_headers: List[str] = []  # Кэш заголовков
@@ -51,12 +52,15 @@ class GoogleSheetsClient:
         )
         return gspread.authorize(credentials)
 
-    def _open_or_create_sheet(self, sheet_name: str):
+    def _open_or_create_sheet(self, sheet_name: str, clear_on_open: bool = True):
         try:
             sheet = self.spreadsheet.worksheet(sheet_name)
-            # Очищаем существующий лист перед экспортом
-            print(f"[INFO] Лист '{sheet_name}' найден. Очищаем...")
-            sheet.clear()
+            if clear_on_open:
+                # Очищаем существующий лист перед экспортом
+                print(f"[INFO] Лист '{sheet_name}' найден. Очищаем...")
+                sheet.clear()
+            else:
+                print(f"[INFO] Лист '{sheet_name}' найден. Читаем...")
             return sheet
         except WorksheetNotFound:
             print(f"[INFO] Лист '{sheet_name}' не найден. Создаём новый.")

@@ -76,7 +76,8 @@ class GoogleSheetsImporter:
         client = GoogleSheetsClient(
             credentials_path=self.credentials_path,
             spreadsheet_id=spreadsheet_id,
-            worksheet_name=sheet_name
+            worksheet_name=sheet_name,
+            clear_on_open=False  # НЕ очищать при импорте!
         )
         
         # Читаем все данные
@@ -129,7 +130,8 @@ class GoogleSheetsImporter:
         client = GoogleSheetsClient(
             credentials_path=self.credentials_path,
             spreadsheet_id=spreadsheet_id,
-            worksheet_name=sheet_name
+            worksheet_name=sheet_name,
+            clear_on_open=False  # НЕ очищать при импорте!
         )
         
         all_data = client.sheet.get_all_records()
@@ -210,7 +212,8 @@ class GoogleSheetsImporter:
             client = GoogleSheetsClient(
                 credentials_path=self.credentials_path,
                 spreadsheet_id=spreadsheet_id,
-                worksheet_name=sheet_name
+                worksheet_name=sheet_name,
+                clear_on_open=False  # НЕ очищать при импорте!
             )
         except Exception as e:
             logger.warning(f"Лист '{sheet_name}' не найден, пропускаем: {e}")
