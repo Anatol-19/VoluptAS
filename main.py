@@ -752,8 +752,8 @@ class MainWindow(QMainWindow):
         
         sync_menu = tools_menu.addMenu('🔄 Синхронизация')
         
-        sync_zoho_action = QAction('Zoho', self)
-        sync_zoho_action.triggered.connect(self.sync_zoho)
+        sync_zoho_action = QAction('📋 Zoho Projects', self)
+        sync_zoho_action.triggered.connect(self.sync_zoho_projects)
         sync_menu.addAction(sync_zoho_action)
         
         sync_google_action = QAction('Google', self)
@@ -1426,9 +1426,14 @@ class MainWindow(QMainWindow):
         """Экспорт в Excel"""
         QMessageBox.information(self, 'Excel Export', 'Экспорт в Excel будет реализован позже')
     
-    def sync_zoho(self):
-        """Синхронизация с Zoho"""
-        QMessageBox.information(self, 'Zoho Sync', 'Синхронизация с Zoho будет реализована позже')
+    def sync_zoho_projects(self):
+        """Синхронизация задач из Zoho Projects"""
+        from src.ui.dialogs.zoho_sync_dialog import ZohoSyncDialog
+        
+        dialog = ZohoSyncDialog(self.session, self)
+        if dialog.exec():
+            # После успешной синхронизации можно обновить данные
+            self.statusBar().showMessage('✅ Задачи Zoho синхронизированы')
     
     def closeEvent(self, event):
         self.session.close()
