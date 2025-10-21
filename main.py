@@ -170,6 +170,13 @@ class DynamicEditDialog(QDialog):
         if self.item.segment:
             self.segment_combo.setCurrentText(self.item.segment)
         basic_layout.addRow('Segment:', self.segment_combo)
+        
+        # Hint для Segment
+        self.segment_hint = QLabel('<i>Применяется только для Feature, Story, Service, Page, Element</i>')
+        self.segment_hint.setStyleSheet('color: gray; font-size: 9pt;')
+        self.segment_hint.setWordWrap(True)
+        basic_layout.addRow('', self.segment_hint)
+        
         self.field_widgets['segment'] = (basic_layout.labelForField(self.segment_combo), self.segment_combo)
         
         # Module
@@ -313,6 +320,59 @@ class DynamicEditDialog(QDialog):
         
         main_layout.addWidget(tabs)
         
+        # Collapsible фрейм с дополнительными полями
+        self.advanced_group = QGroupBox("🔽 Дополнительные поля")
+        self.advanced_group.setCheckable(True)
+        self.advanced_group.setChecked(False)  # Свернут по умолчанию
+        self.advanced_group.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                border: 1px solid #cccccc;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 0 5px;
+            }
+        """)
+        
+        advanced_layout = QFormLayout()
+        
+        # Container (для Service)
+        self.container_edit = QLineEdit(self.item.container or '')
+        self.container_edit.setPlaceholderText('Docker container, K8s pod, etc.')
+        advanced_layout.addRow('Container:', self.container_edit)
+        
+        # Database (для Service)
+        self.database_edit = QLineEdit(self.item.database or '')
+        self.database_edit.setPlaceholderText('PostgreSQL, MongoDB, Redis, etc.')
+        advanced_layout.addRow('Database:', self.database_edit)
+        
+        # Subsystems involved
+        self.subsystems_edit = QTextEdit(self.item.subsystems_involved or '')
+        self.subsystems_edit.setMaximumHeight(60)
+        self.subsystems_edit.setPlaceholderText('Задействованные подсистемы (через запятую)')
+        advanced_layout.addRow('Subsystems:', self.subsystems_edit)
+        
+        # External services
+        self.external_services_edit = QTextEdit(self.item.external_services or '')
+        self.external_services_edit.setMaximumHeight(60)
+        self.external_services_edit.setPlaceholderText('Внешние сервисы (Stripe, AWS S3, etc.)')
+        advanced_layout.addRow('External Services:', self.external_services_edit)
+        
+        # Custom fields (JSON)
+        self.custom_fields_edit = QTextEdit(self.item.custom_fields or '')
+        self.custom_fields_edit.setMaximumHeight(80)
+        self.custom_fields_edit.setPlaceholderText('{"key": "value", ...}')
+        self.custom_fields_edit.setStyleSheet('font-family: Consolas, monospace;')
+        advanced_layout.addRow('Custom Fields (JSON):', self.custom_fields_edit)
+        
+        self.advanced_group.setLayout(advanced_layout)
+        main_layout.addWidget(self.advanced_group)
+        
         # Кнопки
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.save)
@@ -351,11 +411,32 @@ class DynamicEditDialog(QDialog):
         # Segment отдельно - только для типов с has_segment=True
         if 'segment' in self.field_widgets:
             label, widget = self.field_widgets['segment']
-            visible = config.get('has_segment', False)
-            label.setVisible(visible)
-            widget.setVisible(visible)
-            if not visible:
+            has_segment = config.get('has_segment', False)
+            label.setVisible(has_segment)
+            widget.setVisible(has_segment)
+            
+            # Показ/скрыть hint
+            if hasattr(self, 'segment_hint'):
+                self.segment_hint.setVisible(has_segment)
+            
+            if not has_segment:
                 widget.setCurrentText('')  # Очищаем если скрыто
+            else:
+                # Умные рекомендации для segment
+                current_segment = widget.currentText()
+                
+                # Если segment уже заполнен - не меняем
+                if not current_segment and self.is_new:
+                    if item_type in ['Page', 'Element']:
+                        widget.setCurrentText('UI')
+                        self.segment_hint.setText('<i>Рекомендация: UI (авто-предложение для Page/Element)</i>')
+                    elif item_type == 'Service':
+                        widget.setCurrentText('Backend')
+                        self.segment_hint.setText('<i>Рекомендация: Backend (авто-предложение для Service)</i>')
+                    else:
+                        self.segment_hint.setText('<i>Выберите подходящий segment для этого Feature/Story</i>')
+                else:
+                    self.segment_hint.setText('<i>Применяется только для Feature, Story, Service, Page, Element</i>')
         
         # Показываем/скрываем вкладку покрытия
         if hasattr(self, 'coverage_tab'):
@@ -458,6 +539,18 @@ class DynamicEditDialog(QDialog):
             self.item.test_cases_linked = self.test_cases_edit.toPlainText().strip() or None
             self.item.automation_status = self.automation_combo.currentText() or None
             self.item.documentation_links = self.docs_edit.toPlainText().strip() or None
+        
+        # Дополнительные поля
+        if hasattr(self, 'container_edit'):
+            self.item.container = self.container_edit.text().strip() or None
+        if hasattr(self, 'database_edit'):
+            self.item.database = self.database_edit.text().strip() or None
+        if hasattr(self, 'subsystems_edit'):
+            self.item.subsystems_involved = self.subsystems_edit.toPlainText().strip() or None
+        if hasattr(self, 'external_services_edit'):
+            self.item.external_services = self.external_services_edit.toPlainText().strip() or None
+        if hasattr(self, 'custom_fields_edit'):
+            self.item.custom_fields = self.custom_fields_edit.toPlainText().strip() or None
         
         self.accept()
 
