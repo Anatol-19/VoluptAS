@@ -986,15 +986,22 @@ class MainWindow(QMainWindow):
         
         # Таблица
         self.table = QTableWidget()
-        self.table.setColumnCount(12)
+        self.table.setColumnCount(13)
         self.table.setHorizontalHeaderLabels([
-            'FuncID', 'Alias', 'Title', 'Type', 'Module', 'Epic', 'Feature', 'QA', 'Dev', 'Segment', 'Crit', 'Focus'
+            'FuncID', 'Alias', 'Title', 'Type', 'Module', 'Epic', 'Feature', 'QA', 'Dev', 'Segment', 'Crit', 'Focus', 'Actions'
         ])
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         # Разрешаем inline-редактирование по double-click
         self.table.setEditTriggers(QTableWidget.EditTrigger.DoubleClicked)
         self.table.itemChanged.connect(self.on_item_changed)
         self.table.itemSelectionChanged.connect(self.on_selection_changed)
+        
+        # Контекстное меню для таблицы
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self.show_context_menu)
+        
+        # Двойной клик на строке открывает карточку редактирования
+        self.table.doubleClicked.connect(self.on_table_double_click)
         content_layout.addWidget(self.table, stretch=7)
         
         # Мини-граф справа
@@ -1149,6 +1156,28 @@ class MainWindow(QMainWindow):
             focus_check.stateChanged.connect(lambda state, r=row_idx, c=11: self.on_checkbox_changed(r, c, state))
             focus_layout.addWidget(focus_check)
             self.table.setCellWidget(row_idx, 11, focus_widget)
+            
+            # Actions - кнопки редактирования и удаления
+            actions_widget = QWidget()
+            actions_layout = QHBoxLayout(actions_widget)
+            actions_layout.setContentsMargins(4, 2, 4, 2)
+            actions_layout.setSpacing(4)
+            
+            edit_btn = QPushButton('✏️')
+            edit_btn.setFixedSize(30, 25)
+            edit_btn.setToolTip('Редактировать')
+            edit_btn.setStyleSheet('QPushButton { font-size: 14px; }')
+            edit_btn.clicked.connect(lambda checked, r=row_idx: self.edit_item_by_row(r))
+            actions_layout.addWidget(edit_btn)
+            
+            delete_btn = QPushButton('🗑️')
+            delete_btn.setFixedSize(30, 25)
+            delete_btn.setToolTip('Удалить')
+            delete_btn.setStyleSheet('QPushButton { font-size: 14px; }')
+            delete_btn.clicked.connect(lambda checked, r=row_idx: self.delete_item_by_row(r))
+            actions_layout.addWidget(delete_btn)
+            
+            self.table.setCellWidget(row_idx, 12, actions_widget)
         
         self.table.resizeColumnsToContents()
         
@@ -1309,17 +1338,17 @@ class MainWindow(QMainWindow):
             
             # Фильтр по Segment
             if segment_filter and show:
-                segment_cell = self.table.item(row, 8)
+                segment_cell = self.table.item(row, 9)  # Изменено: 8 → 9
                 show = show and (segment_cell and segment_cell.text() == segment_filter)
             
             # Фильтр по QA
             if qa_filter and show:
-                qa_cell = self.table.item(row, 6)
+                qa_cell = self.table.item(row, 7)  # Изменено: 6 → 7
                 show = show and (qa_cell and qa_cell.text() == qa_filter)
             
             # Фильтр по Dev
             if dev_filter and show:
-                dev_cell = self.table.item(row, 7)
+                dev_cell = self.table.item(row, 8)  # Изменено: 7 → 8
                 show = show and (dev_cell and dev_cell.text() == dev_filter)
             
             self.table.setRowHidden(row, not show)
@@ -1381,6 +1410,122 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     self.session.rollback()
                     QMessageBox.critical(self, 'Ошибка', f'Не удалось удалить:\n{e}')
+    
+    def edit_item_by_row(self, row_idx):
+        """Редактирование элемента по номеру строки"""
+        if row_idx < 0 or row_idx >= self.table.rowCount():
+            return
+        
+        functional_id = self.table.item(row_idx, 0).text()
+        item = self.session.query(FunctionalItem).filter_by(functional_id=functional_id).first()
+        
+        if item:
+            dialog = DynamicEditDialog(item, self.session, self)
+            if dialog.exec():
+                try:
+                    self.session.commit()
+                    self.load_data()
+                    self.statusBar().showMessage(f'✅ Сохранено: {item.functional_id}')
+                except Exception as e:
+                    self.session.rollback()
+                    QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
+    
+    def delete_item_by_row(self, row_idx):
+        """Удаление элемента по номеру строки"""
+        if row_idx < 0 or row_idx >= self.table.rowCount():
+            return
+        
+        functional_id = self.table.item(row_idx, 0).text()
+        item = self.session.query(FunctionalItem).filter_by(functional_id=functional_id).first()
+        
+        if item:
+            reply = QMessageBox.question(
+                self, 'Подтверждение',
+                f'Удалить:\n{item.functional_id}?',
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                try:
+                    self.session.delete(item)
+                    self.session.commit()
+                    self.load_data()
+                    self.statusBar().showMessage(f'✅ Удалено: {item.functional_id}')
+                except Exception as e:
+                    self.session.rollback()
+                    QMessageBox.critical(self, 'Ошибка', f'Не удалось удалить:\n{e}')
+    
+    def show_context_menu(self, position):
+        """Показать контекстное меню для таблицы"""
+        row = self.table.rowAt(position.y())
+        if row < 0:
+            return
+        
+        menu = QMenu(self)
+        
+        edit_action = QAction('✏️ Редактировать', self)
+        edit_action.triggered.connect(lambda: self.edit_item_by_row(row))
+        menu.addAction(edit_action)
+        
+        duplicate_action = QAction('📋 Дублировать', self)
+        duplicate_action.triggered.connect(lambda: self.duplicate_item_by_row(row))
+        menu.addAction(duplicate_action)
+        
+        menu.addSeparator()
+        
+        delete_action = QAction('🗑️ Удалить', self)
+        delete_action.triggered.connect(lambda: self.delete_item_by_row(row))
+        menu.addAction(delete_action)
+        
+        menu.exec(self.table.viewport().mapToGlobal(position))
+    
+    def on_table_double_click(self, index):
+        """Обработка двойного клика - открыть карточку редактирования"""
+        # Не открываем карточку при клике на колонку Actions
+        if index.column() == 12:  # Actions column
+            return
+        
+        row = index.row()
+        self.edit_item_by_row(row)
+    
+    def duplicate_item_by_row(self, row_idx):
+        """Дублирование элемента по номеру строки"""
+        if row_idx < 0 or row_idx >= self.table.rowCount():
+            return
+        
+        functional_id = self.table.item(row_idx, 0).text()
+        original_item = self.session.query(FunctionalItem).filter_by(functional_id=functional_id).first()
+        
+        if original_item:
+            # Создаем копию
+            new_item = FunctionalItem(
+                functional_id=f"{original_item.functional_id}.copy",
+                alias_tag=f"{original_item.alias_tag}_copy" if original_item.alias_tag else None,
+                title=f"{original_item.title} (copy)",
+                type=original_item.type,
+                description=original_item.description,
+                parent_id=original_item.parent_id,
+                module=original_item.module,
+                epic=original_item.epic,
+                feature=original_item.feature,
+                segment=original_item.segment,
+                is_crit=original_item.is_crit,
+                is_focus=original_item.is_focus,
+                responsible_qa_id=original_item.responsible_qa_id,
+                responsible_dev_id=original_item.responsible_dev_id,
+                accountable_id=original_item.accountable_id
+            )
+            
+            # Открываем диалог редактирования для копии
+            dialog = DynamicEditDialog(new_item, self.session, self)
+            if dialog.exec():
+                try:
+                    self.session.add(new_item)
+                    self.session.commit()
+                    self.load_data()
+                    self.statusBar().showMessage(f'✅ Дублировано: {new_item.functional_id}')
+                except Exception as e:
+                    self.session.rollback()
+                    QMessageBox.critical(self, 'Ошибка', f'Не удалось дублировать:\n{e}')
     
     def open_entity_editor(self):
         """Открыть редактор сущностей"""
