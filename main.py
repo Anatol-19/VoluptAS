@@ -986,9 +986,9 @@ class MainWindow(QMainWindow):
         
         # Таблица
         self.table = QTableWidget()
-        self.table.setColumnCount(11)
+        self.table.setColumnCount(12)
         self.table.setHorizontalHeaderLabels([
-            'FuncID', 'Alias', 'Title', 'Type', 'Module', 'Epic', 'QA', 'Dev', 'Segment', 'Crit', 'Focus'
+            'FuncID', 'Alias', 'Title', 'Type', 'Module', 'Epic', 'Feature', 'QA', 'Dev', 'Segment', 'Crit', 'Focus'
         ])
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         # Разрешаем inline-редактирование по double-click
@@ -1101,23 +1101,33 @@ class MainWindow(QMainWindow):
             type_item.setFlags(type_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.table.setItem(row_idx, 3, type_item)
             
-            module_item = QTableWidgetItem(item.module or '')
+            # Module - показываем ──┐ если item.type == 'Module'
+            module_display = '──┐' if item.type == 'Module' else (item.module or '')
+            module_item = QTableWidgetItem(module_display)
             module_item.setFlags(module_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.table.setItem(row_idx, 4, module_item)
             
-            epic_item = QTableWidgetItem(item.epic or '')
+            # Epic - показываем ──┐ если item.type == 'Epic'
+            epic_display = '──┐' if item.type == 'Epic' else (item.epic or '')
+            epic_item = QTableWidgetItem(epic_display)
             epic_item.setFlags(epic_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.table.setItem(row_idx, 5, epic_item)
             
+            # Feature - показываем ──┐ если item.type == 'Feature'
+            feature_display = '──┐' if item.type == 'Feature' else (item.feature or '')
+            feature_item = QTableWidgetItem(feature_display)
+            feature_item.setFlags(feature_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row_idx, 6, feature_item)
+            
             qa_item = QTableWidgetItem(item.responsible_qa.name if item.responsible_qa else '')
             qa_item.setFlags(qa_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.table.setItem(row_idx, 6, qa_item)
+            self.table.setItem(row_idx, 7, qa_item)
             
             dev_item = QTableWidgetItem(item.responsible_dev.name if item.responsible_dev else '')
             dev_item.setFlags(dev_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.table.setItem(row_idx, 7, dev_item)
+            self.table.setItem(row_idx, 8, dev_item)
             
-            self.table.setItem(row_idx, 8, QTableWidgetItem(item.segment or ''))  # Редактируемый
+            self.table.setItem(row_idx, 9, QTableWidgetItem(item.segment or ''))  # Редактируемый
             
             # Crit и Focus - чекбоксы
             crit_widget = QWidget()
@@ -1126,9 +1136,9 @@ class MainWindow(QMainWindow):
             crit_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
             crit_check = QCheckBox()
             crit_check.setChecked(bool(item.is_crit))
-            crit_check.stateChanged.connect(lambda state, r=row_idx, c=9: self.on_checkbox_changed(r, c, state))
+            crit_check.stateChanged.connect(lambda state, r=row_idx, c=10: self.on_checkbox_changed(r, c, state))
             crit_layout.addWidget(crit_check)
-            self.table.setCellWidget(row_idx, 9, crit_widget)
+            self.table.setCellWidget(row_idx, 10, crit_widget)
             
             focus_widget = QWidget()
             focus_layout = QHBoxLayout(focus_widget)
@@ -1136,9 +1146,9 @@ class MainWindow(QMainWindow):
             focus_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
             focus_check = QCheckBox()
             focus_check.setChecked(bool(item.is_focus))
-            focus_check.stateChanged.connect(lambda state, r=row_idx, c=10: self.on_checkbox_changed(r, c, state))
+            focus_check.stateChanged.connect(lambda state, r=row_idx, c=11: self.on_checkbox_changed(r, c, state))
             focus_layout.addWidget(focus_check)
-            self.table.setCellWidget(row_idx, 10, focus_widget)
+            self.table.setCellWidget(row_idx, 11, focus_widget)
         
         self.table.resizeColumnsToContents()
         
@@ -1161,11 +1171,21 @@ class MainWindow(QMainWindow):
             for row in range(self.table.rowCount()):
                 show = True
                 if self.current_filter == 'crit':
-                    crit_item = self.table.item(row, 9)  # Изменено: 8 → 9
-                    show = crit_item and crit_item.text() == '✓'
+                    # Crit теперь в колонке 10 (было 9)
+                    crit_widget = self.table.cellWidget(row, 10)
+                    if crit_widget:
+                        crit_check = crit_widget.findChild(QCheckBox)
+                        show = crit_check and crit_check.isChecked()
+                    else:
+                        show = False
                 elif self.current_filter == 'focus':
-                    focus_item = self.table.item(row, 10)  # Изменено: 9 → 10
-                    show = focus_item and focus_item.text() == '✓'
+                    # Focus теперь в колонке 11 (было 10)
+                    focus_widget = self.table.cellWidget(row, 11)
+                    if focus_widget:
+                        focus_check = focus_widget.findChild(QCheckBox)
+                        show = focus_check and focus_check.isChecked()
+                    else:
+                        show = False
                 
                 self.table.setRowHidden(row, not show)
         
