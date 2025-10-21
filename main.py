@@ -257,10 +257,40 @@ class DynamicEditDialog(QDialog):
             self.accountable_combo.setCurrentText(self.item.accountable.name)
         resp_layout.addRow('Accountable:', self.accountable_combo)
         
-        # Информация
-        info_label = QLabel('Consulted и Informed будут добавлены в следующих версиях')
-        info_label.setStyleSheet('color: gray; font-style: italic;')
-        resp_layout.addRow(info_label)
+        resp_layout.addRow('', QLabel(''))
+        
+        # Consulted - множественный выбор
+        consulted_label = QLabel('Consulted (консультанты):')
+        resp_layout.addRow(consulted_label)
+        
+        self.consulted_list = QListWidget()
+        self.consulted_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
+        self.consulted_list.setMaximumHeight(100)
+        for u in raci_users:
+            self.consulted_list.addItem(u.name)
+        resp_layout.addRow(self.consulted_list)
+        
+        consulted_hint = QLabel('<i>Удерживайте Ctrl для множественного выбора</i>')
+        consulted_hint.setStyleSheet('color: gray; font-size: 9pt;')
+        resp_layout.addRow('', consulted_hint)
+        
+        # Informed - множественный выбор
+        informed_label = QLabel('Informed (информируемые):')
+        resp_layout.addRow(informed_label)
+        
+        self.informed_list = QListWidget()
+        self.informed_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
+        self.informed_list.setMaximumHeight(100)
+        for u in raci_users:
+            self.informed_list.addItem(u.name)
+        resp_layout.addRow(self.informed_list)
+        
+        informed_hint = QLabel('<i>Удерживайте Ctrl для множественного выбора</i>')
+        informed_hint.setStyleSheet('color: gray; font-size: 9pt;')
+        resp_layout.addRow('', informed_hint)
+        
+        # Загрузка текущих значений Consulted и Informed
+        # TODO: реализовать загрузку из consulted_ids и informed_ids
         
         tabs.addTab(responsible_tab, '👥 Ответственные')
         
@@ -318,12 +348,47 @@ class DynamicEditDialog(QDialog):
         tabs.addTab(bdd_tab, '🧑‍💻 BDD')
         self.bdd_tab = bdd_tab
         
+        # Вкладка 5: Инфраструктура
+        infra_tab = QWidget()
+        infra_layout = QFormLayout(infra_tab)
+        
+        # Container (для Service)
+        self.container_edit = QLineEdit(self.item.container or '')
+        self.container_edit.setPlaceholderText('Docker container, K8s pod, etc.')
+        infra_layout.addRow('Container:', self.container_edit)
+        
+        # Database (для Service)
+        self.database_edit = QLineEdit(self.item.database or '')
+        self.database_edit.setPlaceholderText('PostgreSQL, MongoDB, Redis, etc.')
+        infra_layout.addRow('Database:', self.database_edit)
+        
+        # Subsystems involved
+        self.subsystems_edit = QTextEdit(self.item.subsystems_involved or '')
+        self.subsystems_edit.setMaximumHeight(60)
+        self.subsystems_edit.setPlaceholderText('Задействованные подсистемы (через запятую)')
+        infra_layout.addRow('Subsystems:', self.subsystems_edit)
+        
+        # External services
+        self.external_services_edit = QTextEdit(self.item.external_services or '')
+        self.external_services_edit.setMaximumHeight(60)
+        self.external_services_edit.setPlaceholderText('Внешние сервисы (Stripe, AWS S3, etc.)')
+        infra_layout.addRow('External Services:', self.external_services_edit)
+        
+        # Custom fields (JSON)
+        self.custom_fields_edit = QTextEdit(self.item.custom_fields or '')
+        self.custom_fields_edit.setMaximumHeight(80)
+        self.custom_fields_edit.setPlaceholderText('{"key": "value", ...}')
+        self.custom_fields_edit.setStyleSheet('font-family: Consolas, monospace;')
+        infra_layout.addRow('Custom Fields (JSON):', self.custom_fields_edit)
+        
+        tabs.addTab(infra_tab, '🏭 Инфра')
+        
         main_layout.addWidget(tabs)
         
-        # Collapsible фрейм с дополнительными полями
+        # Collapsible фрейм с ДОПОЛНИТЕЛЬНЫМИ полями (скрытые по типу)
         self.advanced_group = QGroupBox("🔽 Дополнительные поля")
         self.advanced_group.setCheckable(True)
-        self.advanced_group.setChecked(False)  # Свернут по умолчанию
+        self.advanced_group.setChecked(False)
         self.advanced_group.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -341,34 +406,46 @@ class DynamicEditDialog(QDialog):
         
         advanced_layout = QFormLayout()
         
-        # Container (для Service)
-        self.container_edit = QLineEdit(self.item.container or '')
-        self.container_edit.setPlaceholderText('Docker container, K8s pod, etc.')
-        advanced_layout.addRow('Container:', self.container_edit)
+        # Здесь будут скрытые по типу поля
+        # Module → epic, feature, segment
+        # Epic → feature, segment
+        # Feature → segment
+        # Они будут добавляться динамически в on_type_changed
         
-        # Database (для Service)
-        self.database_edit = QLineEdit(self.item.database or '')
-        self.database_edit.setPlaceholderText('PostgreSQL, MongoDB, Redis, etc.')
-        advanced_layout.addRow('Database:', self.database_edit)
+        # Module (скрыто по умолчанию, если не Module)
+        self.advanced_module_combo = QComboBox()
+        self.advanced_module_combo.setEditable(True)
+        self.populate_combo(self.advanced_module_combo, 'module')
+        self.advanced_module_label = QLabel('Module:')
+        advanced_layout.addRow(self.advanced_module_label, self.advanced_module_combo)
         
-        # Subsystems involved
-        self.subsystems_edit = QTextEdit(self.item.subsystems_involved or '')
-        self.subsystems_edit.setMaximumHeight(60)
-        self.subsystems_edit.setPlaceholderText('Задействованные подсистемы (через запятую)')
-        advanced_layout.addRow('Subsystems:', self.subsystems_edit)
+        # Epic
+        self.advanced_epic_combo = QComboBox()
+        self.advanced_epic_combo.setEditable(True)
+        self.populate_combo(self.advanced_epic_combo, 'epic')
+        self.advanced_epic_label = QLabel('Epic:')
+        advanced_layout.addRow(self.advanced_epic_label, self.advanced_epic_combo)
         
-        # External services
-        self.external_services_edit = QTextEdit(self.item.external_services or '')
-        self.external_services_edit.setMaximumHeight(60)
-        self.external_services_edit.setPlaceholderText('Внешние сервисы (Stripe, AWS S3, etc.)')
-        advanced_layout.addRow('External Services:', self.external_services_edit)
+        # Feature
+        self.advanced_feature_combo = QComboBox()
+        self.advanced_feature_combo.setEditable(True)
+        self.populate_combo(self.advanced_feature_combo, 'feature')
+        self.advanced_feature_label = QLabel('Feature:')
+        advanced_layout.addRow(self.advanced_feature_label, self.advanced_feature_combo)
         
-        # Custom fields (JSON)
-        self.custom_fields_edit = QTextEdit(self.item.custom_fields or '')
-        self.custom_fields_edit.setMaximumHeight(80)
-        self.custom_fields_edit.setPlaceholderText('{"key": "value", ...}')
-        self.custom_fields_edit.setStyleSheet('font-family: Consolas, monospace;')
-        advanced_layout.addRow('Custom Fields (JSON):', self.custom_fields_edit)
+        # Segment
+        self.advanced_segment_combo = QComboBox()
+        self.advanced_segment_combo.addItems(['', 'UI', 'UX/CX', 'API', 'Backend', 'Database', 'Integration', 'Security', 'Performance'])
+        if self.item.segment:
+            self.advanced_segment_combo.setCurrentText(self.item.segment)
+        self.advanced_segment_label = QLabel('Segment:')
+        advanced_layout.addRow(self.advanced_segment_label, self.advanced_segment_combo)
+        
+        # Подсказка
+        adv_hint = QLabel('<i>Здесь доступны поля, скрытые для текущего типа сущности</i>')
+        adv_hint.setStyleSheet('color: gray; font-size: 9pt;')
+        adv_hint.setWordWrap(True)
+        advanced_layout.addRow('', adv_hint)
         
         self.advanced_group.setLayout(advanced_layout)
         main_layout.addWidget(self.advanced_group)
@@ -400,7 +477,7 @@ class DynamicEditDialog(QDialog):
         """Показывает/скрывает поля в зависимости от типа"""
         config = get_field_config_for_type(item_type)
         
-        # Показываем/скрываем иерархические поля
+        # Показываем/скрываем иерархические поля на основной вкладке
         for field in ['module', 'epic', 'feature']:
             if field in self.field_widgets:
                 label, widget = self.field_widgets[field]
@@ -415,28 +492,36 @@ class DynamicEditDialog(QDialog):
             label.setVisible(has_segment)
             widget.setVisible(has_segment)
             
-            # Показ/скрыть hint
             if hasattr(self, 'segment_hint'):
                 self.segment_hint.setVisible(has_segment)
+                if has_segment:
+                    self.segment_hint.setText('<i>Применяется для Feature, Story, Service, Page, Element</i>')
             
             if not has_segment:
-                widget.setCurrentText('')  # Очищаем если скрыто
-            else:
-                # Умные рекомендации для segment
-                current_segment = widget.currentText()
-                
-                # Если segment уже заполнен - не меняем
-                if not current_segment and self.is_new:
-                    if item_type in ['Page', 'Element']:
-                        widget.setCurrentText('UI')
-                        self.segment_hint.setText('<i>Рекомендация: UI (авто-предложение для Page/Element)</i>')
-                    elif item_type == 'Service':
-                        widget.setCurrentText('Backend')
-                        self.segment_hint.setText('<i>Рекомендация: Backend (авто-предложение для Service)</i>')
-                    else:
-                        self.segment_hint.setText('<i>Выберите подходящий segment для этого Feature/Story</i>')
-                else:
-                    self.segment_hint.setText('<i>Применяется только для Feature, Story, Service, Page, Element</i>')
+                widget.setCurrentText('')
+        
+        # Управляем видимостью полей в "Дополнительных полях"
+        # Показываем только те, что скрыты на основной вкладке
+        if hasattr(self, 'advanced_module_label'):
+            # Module - показываем в доп. полях, если скрыт на основной
+            show_in_advanced = 'module' in config['hide']
+            self.advanced_module_label.setVisible(show_in_advanced)
+            self.advanced_module_combo.setVisible(show_in_advanced)
+            
+        if hasattr(self, 'advanced_epic_label'):
+            show_in_advanced = 'epic' in config['hide']
+            self.advanced_epic_label.setVisible(show_in_advanced)
+            self.advanced_epic_combo.setVisible(show_in_advanced)
+            
+        if hasattr(self, 'advanced_feature_label'):
+            show_in_advanced = 'feature' in config['hide']
+            self.advanced_feature_label.setVisible(show_in_advanced)
+            self.advanced_feature_combo.setVisible(show_in_advanced)
+            
+        if hasattr(self, 'advanced_segment_label'):
+            show_in_advanced = not config.get('has_segment', False)
+            self.advanced_segment_label.setVisible(show_in_advanced)
+            self.advanced_segment_combo.setVisible(show_in_advanced)
         
         # Показываем/скрываем вкладку покрытия
         if hasattr(self, 'coverage_tab'):
@@ -502,24 +587,42 @@ class DynamicEditDialog(QDialog):
         self.item.title = self.title_edit.text().strip()
         self.item.type = self.type_combo.currentText()
         self.item.description = self.description_edit.toPlainText().strip() or None
-        self.item.segment = self.segment_combo.currentText() or None
         
-        # Иерархия
+        # Иерархия и Segment - берем из основных полей или из дополнительных
         config = get_field_config_for_type(self.item.type)
+        
+        # Module
         if 'module' not in config['hide']:
             self.item.module = self.module_combo.currentText().strip() or None
+        elif hasattr(self, 'advanced_module_combo'):
+            # Берем из дополнительных полей
+            self.item.module = self.advanced_module_combo.currentText().strip() or None
         else:
             self.item.module = None
-            
+        
+        # Epic
         if 'epic' not in config['hide']:
             self.item.epic = self.epic_combo.currentText().strip() or None
+        elif hasattr(self, 'advanced_epic_combo'):
+            self.item.epic = self.advanced_epic_combo.currentText().strip() or None
         else:
             self.item.epic = None
-            
+        
+        # Feature
         if 'feature' not in config['hide']:
             self.item.feature = self.feature_combo.currentText().strip() or None
+        elif hasattr(self, 'advanced_feature_combo'):
+            self.item.feature = self.advanced_feature_combo.currentText().strip() or None
         else:
             self.item.feature = None
+        
+        # Segment
+        if config.get('has_segment', False):
+            self.item.segment = self.segment_combo.currentText() or None
+        elif hasattr(self, 'advanced_segment_combo'):
+            self.item.segment = self.advanced_segment_combo.currentText() or None
+        else:
+            self.item.segment = None
         
         self.item.is_crit = 1 if self.is_crit_check.isChecked() else 0
         self.item.is_focus = 1 if self.is_focus_check.isChecked() else 0
