@@ -67,14 +67,13 @@ echo.
 
 REM Verify critical packages
 echo [5/5] Verifying installation...
-python -c "import PyQt6; import sqlalchemy; print('✓ All critical packages installed')"
+python -c "import PyQt6; import sqlalchemy; print('OK: All critical packages installed')"
 if errorlevel 1 (
     echo ERROR: Critical packages verification failed
     pause
     exit /b 1
 )
 echo.
-
 echo ====================================
 echo Setup Complete!
 echo ====================================
