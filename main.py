@@ -290,7 +290,29 @@ class DynamicEditDialog(QDialog):
         resp_layout.addRow('', informed_hint)
         
         # Загрузка текущих значений Consulted и Informed
-        # TODO: реализовать загрузку из consulted_ids и informed_ids
+        if self.item.consulted_ids:
+            import json
+            try:
+                consulted_user_ids = json.loads(self.item.consulted_ids)
+                consulted_names = [u.name for u in raci_users if u.id in consulted_user_ids]
+                for i in range(self.consulted_list.count()):
+                    item_widget = self.consulted_list.item(i)
+                    if item_widget.text() in consulted_names:
+                        item_widget.setSelected(True)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        
+        if self.item.informed_ids:
+            import json
+            try:
+                informed_user_ids = json.loads(self.item.informed_ids)
+                informed_names = [u.name for u in raci_users if u.id in informed_user_ids]
+                for i in range(self.informed_list.count()):
+                    item_widget = self.informed_list.item(i)
+                    if item_widget.text() in informed_names:
+                        item_widget.setSelected(True)
+            except (json.JSONDecodeError, TypeError):
+                pass
         
         tabs.addTab(responsible_tab, '👥 Ответственные')
         
@@ -383,28 +405,9 @@ class DynamicEditDialog(QDialog):
         
         tabs.addTab(infra_tab, '🏭 Инфра')
         
-        main_layout.addWidget(tabs)
-        
-        # Collapsible фрейм с ДОПОЛНИТЕЛЬНЫМИ полями (скрытые по типу)
-        self.advanced_group = QGroupBox("🔽 Дополнительные поля")
-        self.advanced_group.setCheckable(True)
-        self.advanced_group.setChecked(False)
-        self.advanced_group.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                border: 1px solid #cccccc;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 5px;
-            }
-        """)
-        
-        advanced_layout = QFormLayout()
+        # Вкладка 6: Дополнительные поля (скрытые по типу)
+        advanced_tab = QWidget()
+        advanced_layout = QFormLayout(advanced_tab)
         
         # Здесь будут скрытые по типу поля
         # Module → epic, feature, segment
@@ -447,8 +450,10 @@ class DynamicEditDialog(QDialog):
         adv_hint.setWordWrap(True)
         advanced_layout.addRow('', adv_hint)
         
-        self.advanced_group.setLayout(advanced_layout)
-        main_layout.addWidget(self.advanced_group)
+        tabs.addTab(advanced_tab, '🔧 Дополнительные')
+        self.advanced_tab = advanced_tab
+        
+        main_layout.addWidget(tabs)
         
         # Кнопки
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
@@ -502,26 +507,43 @@ class DynamicEditDialog(QDialog):
         
         # Управляем видимостью полей в "Дополнительных полях"
         # Показываем только те, что скрыты на основной вкладке
+        has_hidden_fields = False
+        
         if hasattr(self, 'advanced_module_label'):
             # Module - показываем в доп. полях, если скрыт на основной
             show_in_advanced = 'module' in config['hide']
             self.advanced_module_label.setVisible(show_in_advanced)
             self.advanced_module_combo.setVisible(show_in_advanced)
+            if show_in_advanced:
+                has_hidden_fields = True
             
         if hasattr(self, 'advanced_epic_label'):
             show_in_advanced = 'epic' in config['hide']
             self.advanced_epic_label.setVisible(show_in_advanced)
             self.advanced_epic_combo.setVisible(show_in_advanced)
+            if show_in_advanced:
+                has_hidden_fields = True
             
         if hasattr(self, 'advanced_feature_label'):
             show_in_advanced = 'feature' in config['hide']
             self.advanced_feature_label.setVisible(show_in_advanced)
             self.advanced_feature_combo.setVisible(show_in_advanced)
+            if show_in_advanced:
+                has_hidden_fields = True
             
         if hasattr(self, 'advanced_segment_label'):
             show_in_advanced = not config.get('has_segment', False)
             self.advanced_segment_label.setVisible(show_in_advanced)
             self.advanced_segment_combo.setVisible(show_in_advanced)
+            if show_in_advanced:
+                has_hidden_fields = True
+        
+        # Скрываем/показываем вкладку "Дополнительные поля" в зависимости от наличия скрытых полей
+        if hasattr(self, 'advanced_tab'):
+            tab_widget = self.advanced_tab.parent()
+            if isinstance(tab_widget, QTabWidget):
+                index = tab_widget.indexOf(self.advanced_tab)
+                tab_widget.setTabVisible(index, has_hidden_fields)
         
         # Показываем/скрываем вкладку покрытия
         if hasattr(self, 'coverage_tab'):
@@ -636,6 +658,21 @@ class DynamicEditDialog(QDialog):
         self.item.responsible_qa_id = qa_user.id if qa_user else None
         self.item.responsible_dev_id = dev_user.id if dev_user else None
         self.item.accountable_id = accountable_user.id if accountable_user else None
+        
+        # Сохранение Consulted и Informed
+        import json
+        
+        # Consulted
+        consulted_items = self.consulted_list.selectedItems()
+        consulted_names = [item.text() for item in consulted_items]
+        consulted_users = [u for u in self.session.query(User).filter(User.name.in_(consulted_names)).all()]
+        self.item.consulted_ids = json.dumps([u.id for u in consulted_users]) if consulted_users else None
+        
+        # Informed
+        informed_items = self.informed_list.selectedItems()
+        informed_names = [item.text() for item in informed_items]
+        informed_users = [u for u in self.session.query(User).filter(User.name.in_(informed_names)).all()]
+        self.item.informed_ids = json.dumps([u.id for u in informed_users]) if informed_users else None
         
         # Покрытие
         if config['has_coverage']:
