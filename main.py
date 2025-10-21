@@ -796,20 +796,14 @@ class MainWindow(QMainWindow):
         
         edit_menu.addSeparator()
         
-        add_action = QAction('➕ Добавить', self)
+        add_action = QAction('➞ Добавить', self)
         add_action.setShortcut('Ctrl+N')
         add_action.triggered.connect(self.add_item)
         edit_menu.addAction(add_action)
         
-        edit_item_action = QAction('✏️ Редактировать', self)
-        edit_item_action.setShortcut('Ctrl+E')
-        edit_item_action.triggered.connect(self.edit_item)
-        edit_menu.addAction(edit_item_action)
-        
-        delete_action = QAction('🗑️ Удалить', self)
-        delete_action.setShortcut('Delete')
-        delete_action.triggered.connect(self.delete_item)
-        edit_menu.addAction(delete_action)
+        # Редактировать и Удалить удалены - доступны через контекстное меню и Actions
+        # edit_item_action - теперь через двойной клик / правую кнопку / кнопку Actions
+        # delete_action - теперь через правую кнопку / кнопку Actions
         
         edit_menu.addSeparator()
         
