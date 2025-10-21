@@ -1,17 +1,37 @@
 @echo off
+chcp 65001 >nul
 setlocal ENABLEEXTENSIONS
-REM Change to the directory of this script
 cd /d "%~dp0"
 
-REM Ensure environment is ready
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\bootstrap.ps1"
+echo.
+echo ====================================
+echo VoluptAS Launcher
+echo ====================================
+echo.
+
+REM Check if venv exists, if not - run setup
+if not exist ".venv\Scripts\python.exe" (
+    echo Virtual environment not found. Running initial setup...
+    echo.
+    call setup.bat
+    exit /b %ERRORLEVEL%
+)
 
 REM Activate venv
+echo Activating virtual environment...
 call .venv\Scripts\activate.bat
+if errorlevel 1 (
+    echo ERROR: Failed to activate virtual environment
+    echo Try running setup.bat to recreate it
+    pause
+    exit /b 1
+)
 
 REM Run app
+echo.
+echo Starting VoluptAS...
+echo.
 set PYTHONUTF8=1
-echo Starting VoluptAS GUI...
 python main.py
 
 endlocal
