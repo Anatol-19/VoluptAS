@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-from src.db import SessionLocal
 from src.models import FunctionalItem, Relation, RELATION_TYPES
 
 
@@ -20,7 +19,8 @@ class FullGraphTabWidget(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.session = SessionLocal()
+        # Используем session из parent (MainWindow)
+        self.session = parent.session if parent and hasattr(parent, 'session') else None
         self.graph = nx.DiGraph()
         self.pos = None
         self.filters = {
@@ -77,6 +77,9 @@ class FullGraphTabWidget(QWidget):
     
     def load_graph(self):
         """Загрузить граф из БД"""
+        if not self.session:
+            return
+        
         self.graph.clear()
         
         items = self.session.query(FunctionalItem).all()
@@ -177,5 +180,5 @@ class FullGraphTabWidget(QWidget):
         self.load_graph()
     
     def closeEvent(self, event):
-        self.session.close()
+        # Session управляется в MainWindow, не закрываем его здесь
         event.accept()

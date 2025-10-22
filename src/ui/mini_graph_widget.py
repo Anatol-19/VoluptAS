@@ -7,7 +7,6 @@ import networkx as nx
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-from src.db import SessionLocal
 from src.models import FunctionalItem, Relation, RELATION_TYPES
 
 
@@ -16,7 +15,8 @@ class MiniGraphWidget(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.session = SessionLocal()
+        # Используем session из parent (MainWindow)
+        self.session = parent.session if parent and hasattr(parent, 'session') else None
         self.current_item_id = None
         
         self.init_ui()
@@ -43,7 +43,7 @@ class MiniGraphWidget(QWidget):
     
     def update_graph(self, item_id):
         """Обновить граф для выбранного элемента"""
-        if not item_id:
+        if not self.session or not item_id:
             self.clear_graph()
             return
         
@@ -166,5 +166,5 @@ class MiniGraphWidget(QWidget):
         self.hint_label.setText("Выберите элемент в таблице")
     
     def closeEvent(self, event):
-        self.session.close()
+        # Session управляется в MainWindow, не закрываем его здесь
         event.accept()
