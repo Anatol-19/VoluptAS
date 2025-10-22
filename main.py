@@ -1085,7 +1085,32 @@ class MainWindow(QMainWindow):
         about_action = QAction('ℹ️ О программе', self)
         help_menu.addAction(about_action)
         
-        # Тулбар удалён (всё в меню)
+        # === TOOLBAR ===
+        toolbar = QToolBar('Проект')
+        toolbar.setMovable(False)
+        self.addToolBar(toolbar)
+        
+        # Project selector
+        toolbar.addWidget(QLabel('🗂️ Проект:'))
+        
+        self.project_combo = QComboBox()
+        self.project_combo.setMinimumWidth(200)
+        self.project_combo.currentIndexChanged.connect(self.on_project_combo_changed)
+        toolbar.addWidget(self.project_combo)
+        
+        # Заполняем список проектов
+        self.populate_project_combo()
+        
+        toolbar.addSeparator()
+        
+        # Quick actions
+        refresh_action = QAction('🔄 Обновить', self)
+        refresh_action.triggered.connect(self.load_data)
+        toolbar.addAction(refresh_action)
+        
+        add_action = QAction('➡️ Добавить', self)
+        add_action.triggered.connect(self.add_item)
+        toolbar.addAction(add_action)
         
         # Центральный виджет
         central_widget = QWidget()
@@ -1729,7 +1754,7 @@ class MainWindow(QMainWindow):
     def open_zoho_settings(self):
         """Открыть единые настройки интеграций"""
         from src.ui.dialogs.settings_dialog import SettingsDialog
-        dialog = SettingsDialog(self)
+        dialog = SettingsDialog(self.project_manager, self)
         dialog.exec()
     
     def open_graph_view(self):
@@ -2022,9 +2047,11 @@ class MainWindow(QMainWindow):
                 new_project = self.project_manager.get_current_project()
                 
                 if self.db_manager.connect_to_database(new_project.database_path):
+                    self.ensure_database_initialized()
                     self.session = self.db_manager.get_session()
                     self.load_data()
                     self.update_window_title()
+                    self.populate_project_combo()  # Обновляем combobox
                     self.statusBar().showMessage(f'✅ Работаем в проекте: {new_project.name}')
     
     def open_project_settings(self):
@@ -2038,8 +2065,74 @@ class MainWindow(QMainWindow):
         
         dialog = ProjectSettingsDialog(self.project_manager, current_project.id, self)
         if dialog.exec():
-            # Обновляем WindowTitle если изменили название
+            # Обновляем WindowTitle и combobox если изменили название
             self.update_window_title()
+            self.populate_project_combo()
+    
+    def populate_project_combo(self):
+        """Заполнение combobox списком проектов"""
+        if not hasattr(self, 'project_combo'):
+            return
+        
+        # Блокируем сигналы чтобы не вызвать on_project_combo_changed
+        self.project_combo.blockSignals(True)
+        self.project_combo.clear()
+        
+        projects = self.project_manager.list_projects()
+        current_project = self.project_manager.get_current_project()
+        
+        # Сортируем: сначала активные, потом по last_used
+        active_projects = [p for p in projects if p.is_active]
+        active_projects.sort(key=lambda p: p.last_used or '0', reverse=True)
+        
+        for project in active_projects:
+            profile_emoji = '🏭' if project.settings_profile == 'production' else '🧪'
+            self.project_combo.addItem(f'{profile_emoji} {project.name}', project.id)
+        
+        # Выбираем текущий проект
+        if current_project:
+            index = self.project_combo.findData(current_project.id)
+            if index >= 0:
+                self.project_combo.setCurrentIndex(index)
+        
+        self.project_combo.blockSignals(False)
+    
+    def on_project_combo_changed(self, index):
+        """Обработка смены проекта в combobox"""
+        if index < 0:
+            return
+        
+        project_id = self.project_combo.itemData(index)
+        current_project = self.project_manager.get_current_project()
+        
+        # Если выбран тот же проект - ничего не делаем
+        if current_project and project_id == current_project.id:
+            return
+        
+        # Закрываем текущую сессию
+        if self.session:
+            self.session.close()
+        
+        # Переключаемся
+        self.project_manager.switch_project(project_id)
+        new_project = self.project_manager.get_current_project()
+        
+        # Переподключаемся к новой БД
+        if self.db_manager.connect_to_database(new_project.database_path):
+            self.ensure_database_initialized()
+            self.session = self.db_manager.get_session()
+            
+            # Обновляем UI
+            self.load_data()
+            self.update_window_title()
+            self.statusBar().showMessage(f'✅ Переключено на: {new_project.name}')
+        else:
+            QMessageBox.critical(
+                self, 'Ошибка',
+                f'Не удалось подключиться к БД проекта:\n{new_project.database_path}'
+            )
+            # Возвращаем предыдущий выбор
+            self.populate_project_combo()
     
     def update_window_title(self):
         """Обновление заголовка окна с названием проекта"""

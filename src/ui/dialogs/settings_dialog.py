@@ -81,24 +81,39 @@ class ProjectsFetchThread(QThread):
 class SettingsDialog(QDialog):
     """Единый диалог настроек для всех интеграций"""
     
-    def __init__(self, parent=None):
+    def __init__(self, project_manager=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle('Настройки интеграций')
         self.setMinimumWidth(750)
         self.setMinimumHeight(600)
         
-        # Пути к файлам настроек
         self.project_root = Path(__file__).resolve().parent.parent.parent.parent
-        self.zoho_env_path = self.project_root / 'credentials' / 'zoho.env'
-        self.google_json_path = self.project_root / 'credentials' / 'google_credentials.json'
-        # Fallback на альтернативные имена, если основной не найден
+        
+        # Пути к файлам настроек - из профиля проекта
+        if project_manager:
+            current_project = project_manager.get_current_project()
+            if current_project:
+                profile = project_manager.get_profile(current_project.settings_profile)
+                if profile:
+                    self.zoho_env_path = profile.zoho_env_path or self.project_root / 'credentials' / 'zoho.env'
+                    self.google_json_path = profile.google_json_path or self.project_root / 'credentials' / 'google_credentials.json'
+                    self.qase_env_path = profile.qase_env_path or self.project_root / 'credentials' / 'qase.env'
+                else:
+                    # Профиль не найден - используем дефолтные пути
+                    self._set_default_paths()
+            else:
+                self._set_default_paths()
+        else:
+            # Старое поведение для обратной совместимости
+            self._set_default_paths()
+        
+        # Fallback на альтернативные имена для Google
         if not self.google_json_path.exists():
             for alt_name in ['google_service_account.json', 'service_account.json']:
-                fallback = self.project_root / 'credentials' / alt_name
+                fallback = self.google_json_path.parent / alt_name
                 if fallback.exists():
                     self.google_json_path = fallback
                     break
-        self.qase_env_path = self.project_root / 'credentials' / 'qase.env'
         
         # Потоки
         self.token_thread = None
@@ -106,6 +121,12 @@ class SettingsDialog(QDialog):
         
         self.init_ui()
         self.load_all_settings()
+    
+    def _set_default_paths(self):
+        """Установить дефолтные пути к credentials"""
+        self.zoho_env_path = self.project_root / 'credentials' / 'zoho.env'
+        self.google_json_path = self.project_root / 'credentials' / 'google_credentials.json'
+        self.qase_env_path = self.project_root / 'credentials' / 'qase.env'
     
     def init_ui(self):
         layout = QVBoxLayout(self)
