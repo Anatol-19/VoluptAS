@@ -875,22 +875,72 @@ class EntityEditorWindow(QMainWindow):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.session = SessionLocal()
+        
+        # Инициализация мультипроектности
+        from src.models.project_config import ProjectManager
+        from src.db.database_manager import get_database_manager
+        from src.utils.migration import check_and_migrate
+        
+        config_dir = project_root / 'data' / 'config'
+        
+        # Проверка миграции
+        migrated, msg = check_and_migrate(project_root, self.show_migration_dialog)
+        if migrated:
+            QMessageBox.information(self, 'Миграция завершена', msg)
+        
+        # Инициализация менеджеров
+        self.project_manager = ProjectManager(config_dir)
+        self.db_manager = get_database_manager()
+        
+        # Загрузка текущего проекта
+        current_project = self.project_manager.get_current_project()
+        
+        if not current_project:
+            # Нет проектов - показываем selector
+            self.show_project_selector_startup()
+            current_project = self.project_manager.get_current_project()
+            
+            if not current_project:
+                # Пользователь отменил выбор - выход
+                QMessageBox.warning(self, 'Выход', 'Не выбран проект. Приложение будет закрыто.')
+                sys.exit(0)
+        
+        # Подключаемся к БД проекта
+        if not self.db_manager.connect_to_database(current_project.database_path):
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось подключиться к БД проекта:\n{current_project.database_path}')
+            sys.exit(1)
+        
+        self.session = self.db_manager.get_session()
         self.current_items = []
         self.current_filter = 'all'  # all, crit, focus
         self.init_ui()
         self.load_data()
     
     def init_ui(self):
-        banner = get_version_banner(project_root)
-        self.setWindowTitle(f'VoluptAS {banner} - Functional Coverage Management')
         self.setGeometry(100, 100, 1400, 900)
+        self.update_window_title()  # Устанавливаем заголовок с названием проекта
         
         # === НОВОЕ МЕНЮ ===
         menubar = self.menuBar()
         
         # Меню "Файл"
         file_menu = menubar.addMenu('📁 Файл')
+        
+        # Проекты
+        switch_project_action = QAction('🗂️ Переключить проект...', self)
+        switch_project_action.setShortcut('Ctrl+Shift+P')
+        switch_project_action.triggered.connect(self.switch_project)
+        file_menu.addAction(switch_project_action)
+        
+        new_project_action = QAction('➕ Новый проект...', self)
+        new_project_action.triggered.connect(self.create_new_project)
+        file_menu.addAction(new_project_action)
+        
+        project_settings_action = QAction('⚙️ Настройки проекта...', self)
+        project_settings_action.triggered.connect(self.open_project_settings)
+        file_menu.addAction(project_settings_action)
+        
+        file_menu.addSeparator()
         
         save_action = QAction('💾 Сохранить', self)
         save_action.setShortcut('Ctrl+S')
@@ -1858,43 +1908,125 @@ class MainWindow(QMainWindow):
             # После успешной синхронизации можно обновить данные
             self.statusBar().showMessage('✅ Задачи Zoho синхронизированы')
     
+    def show_migration_dialog(self, message: str) -> bool:
+        """Диалог подтверждения миграции"""
+        reply = QMessageBox.question(
+            None, 'Миграция структуры БД',
+            message,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes
+        )
+        return reply == QMessageBox.StandardButton.Yes
+    
+    def show_project_selector_startup(self):
+        """Показать selector проектов при запуске"""
+        from src.ui.dialogs.project_dialogs import ProjectSelectorDialog
+        
+        dialog = ProjectSelectorDialog(self.project_manager, None)
+        if dialog.exec() and dialog.selected_project_id:
+            self.project_manager.switch_project(dialog.selected_project_id)
+    
+    def switch_project(self):
+        """Переключение проекта"""
+        from src.ui.dialogs.project_dialogs import ProjectSelectorDialog
+        
+        dialog = ProjectSelectorDialog(self.project_manager, self)
+        if dialog.exec() and dialog.selected_project_id:
+            current_project = self.project_manager.get_current_project()
+            
+            # Если выбран тот же проект - не переключаем
+            if current_project and dialog.selected_project_id == current_project.id:
+                self.statusBar().showMessage(f'🗂️ Уже в проекте: {current_project.name}')
+                return
+            
+            # Закрываем текущую сессию
+            if self.session:
+                self.session.close()
+            
+            # Переключаемся
+            self.project_manager.switch_project(dialog.selected_project_id)
+            new_project = self.project_manager.get_current_project()
+            
+            # Переподключаемся к новой БД
+            if self.db_manager.connect_to_database(new_project.database_path):
+                self.session = self.db_manager.get_session()
+                
+                # Обновляем UI
+                self.load_data()
+                self.update_window_title()
+                self.statusBar().showMessage(f'✅ Переключено на: {new_project.name}')
+            else:
+                QMessageBox.critical(
+                    self, 'Ошибка',
+                    f'Не удалось подключиться к БД проекта:\n{new_project.database_path}'
+                )
+    
+    def create_new_project(self):
+        """Создание нового проекта"""
+        from src.ui.dialogs.project_dialogs import NewProjectDialog
+        
+        dialog = NewProjectDialog(self.project_manager, self)
+        if dialog.exec() and dialog.created_project_id:
+            # Спрашиваем, переключиться на новый проект?
+            reply = QMessageBox.question(
+                self, 'Переключиться?',
+                f'Проект создан. Переключиться на него?',
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                # Закрываем текущую сессию
+                if self.session:
+                    self.session.close()
+                
+                # Переключаемся
+                self.project_manager.switch_project(dialog.created_project_id)
+                new_project = self.project_manager.get_current_project()
+                
+                if self.db_manager.connect_to_database(new_project.database_path):
+                    self.session = self.db_manager.get_session()
+                    self.load_data()
+                    self.update_window_title()
+                    self.statusBar().showMessage(f'✅ Работаем в проекте: {new_project.name}')
+    
+    def open_project_settings(self):
+        """Настройки текущего проекта"""
+        from src.ui.dialogs.project_dialogs import ProjectSettingsDialog
+        
+        current_project = self.project_manager.get_current_project()
+        if not current_project:
+            QMessageBox.warning(self, 'Ошибка', 'Нет активного проекта')
+            return
+        
+        dialog = ProjectSettingsDialog(self.project_manager, current_project.id, self)
+        if dialog.exec():
+            # Обновляем WindowTitle если изменили название
+            self.update_window_title()
+    
+    def update_window_title(self):
+        """Обновление заголовка окна с названием проекта"""
+        banner = get_version_banner(project_root)
+        current_project = self.project_manager.get_current_project()
+        
+        if current_project:
+            profile_emoji = '🏭' if current_project.settings_profile == 'production' else '🧪'
+            self.setWindowTitle(
+                f'VoluptAS {banner} - {profile_emoji} {current_project.name}'
+            )
+        else:
+            self.setWindowTitle(f'VoluptAS {banner} - Functional Coverage Management')
+    
     def closeEvent(self, event):
-        self.session.close()
+        if self.session:
+            self.session.close()
+        if self.db_manager:
+            self.db_manager.close()
         event.accept()
 
 
 if __name__ == '__main__':
-    # Инициализировать БД при первом запуске
-    from src.db.database import init_db, DATABASE_PATH, engine
-    from sqlalchemy import inspect
-    
-    db_needs_init = False
-    
-    # Проверяем существование файла БД
-    if not DATABASE_PATH.exists() or DATABASE_PATH.stat().st_size == 0:
-        logger.warning(f'⚠️  БД не найдена или пуста: {DATABASE_PATH}')
-        db_needs_init = True
-    else:
-        # Проверяем наличие таблиц
-        try:
-            inspector = inspect(engine)
-            tables = inspector.get_table_names()
-            required_tables = ['functional_items', 'users', 'functional_item_relations', 'dictionaries']
-            missing_tables = [t for t in required_tables if t not in tables]
-            if missing_tables:
-                logger.warning(f'⚠️  Отсутствуют таблицы: {missing_tables}')
-                db_needs_init = True
-        except Exception as e:
-            logger.error(f'❌ Ошибка проверки БД: {e}')
-            db_needs_init = True
-    
-    if db_needs_init:
-        logger.info('⚙️  Инициализирую БД...')
-        init_db()
-        logger.info('✅ БД инициализирована')
-    else:
-        logger.info(f'✅ БД готова: {DATABASE_PATH}')
-    
+    # При мультипроектности инициализация БД происходит в MainWindow
+    # или при создании нового проекта
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     window = MainWindow()
