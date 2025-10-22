@@ -910,6 +910,10 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, 'Ошибка', f'Не удалось подключиться к БД проекта:\n{current_project.database_path}')
             sys.exit(1)
         
+        # Проверяем наличие таблиц, инициализируем если нужно
+        self.ensure_database_initialized()
+        
+        # Теперь можно создавать session и инициализировать UI
         self.session = self.db_manager.get_session()
         self.current_items = []
         self.current_filter = 'all'  # all, crit, focus
@@ -1907,6 +1911,40 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             # После успешной синхронизации можно обновить данные
             self.statusBar().showMessage('✅ Задачи Zoho синхронизированы')
+    
+    def ensure_database_initialized(self):
+        """Проверка и инициализация БД если нужно"""
+        from sqlalchemy import inspect
+        
+        try:
+            inspector = inspect(self.db_manager.engine)
+            tables = inspector.get_table_names()
+            required_tables = ['functional_items', 'users']
+            
+            if not all(table in tables for table in required_tables):
+                logger.info('⚠️  Отсутствуют необходимые таблицы, инициализирую БД...')
+                self.db_manager.init_database()
+                
+                # Создаём дефолтного пользователя
+                from src.models.user import User
+                session = self.db_manager.get_session()
+                try:
+                    if session.query(User).count() == 0:
+                        default_user = User(
+                            name='Default User',
+                            role='QA',
+                            email='user@example.com',
+                            is_active=1
+                        )
+                        session.add(default_user)
+                        session.commit()
+                        logger.info('✅ Дефолтный пользователь создан')
+                finally:
+                    session.close()
+                
+                logger.info('✅ БД инициализирована')
+        except Exception as e:
+            logger.error(f'❌ Ошибка проверки БД: {e}')
     
     def show_migration_dialog(self, message: str) -> bool:
         """Диалог подтверждения миграции"""

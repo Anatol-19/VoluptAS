@@ -64,8 +64,13 @@ class MigrationManager:
                 shutil.copy2(new_db_path, backup_path)
                 logger.info(f"Создан бэкап: {backup_path}")
             
-            shutil.copy2(self.old_db_path, new_db_path)
-            logger.info(f"✅ БД скопирована: {self.old_db_path} → {new_db_path}")
+            # Если старая БД существует и не пуста - копируем
+            if self.old_db_path.exists() and self.old_db_path.stat().st_size > 0:
+                shutil.copy2(self.old_db_path, new_db_path)
+                logger.info(f"✅ БД скопирована: {self.old_db_path} → {new_db_path}")
+            else:
+                # Создаём пустую БД
+                logger.info(f"Старая БД не найдена, создаём новую")
             
             # Создаём default проект в ProjectManager
             from src.models.project_config import ProjectManager, ProjectConfig
