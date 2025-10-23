@@ -20,6 +20,7 @@ class Config:
     DATA_DIR = BASE_DIR / "data"
     EXPORT_DIR = DATA_DIR / "export"
     IMPORT_DIR = DATA_DIR / "import"
+    CREDENTIALS_DIR = BASE_DIR / "credentials"
     
     # База данных (унифицированный путь с database.py)
     DB_NAME = "voluptas.db"
@@ -69,6 +70,30 @@ class Config:
             str: URI для подключения к БД
         """
         return self.DB_URI
+    
+    @staticmethod
+    def get_credentials_path(filename: str = None) -> Path:
+        """
+        Получить путь к файлу credentials (относительно корня проекта)
+        
+        Args:
+            filename: имя файла в папке credentials (необязательно)
+        
+        Returns:
+            Path: полный путь к credentials или к файлу
+        
+        Example:
+            >>> Config.get_credentials_path()  # Путь к папке
+            Path('C:/project/credentials')
+            >>> Config.get_credentials_path('zoho.env')  # Путь к файлу
+            Path('C:/project/credentials/zoho.env')
+        """
+        base_dir = Path(__file__).parent.parent
+        credentials_dir = base_dir / "credentials"
+        
+        if filename:
+            return credentials_dir / filename
+        return credentials_dir
     
     def get_types(self) -> List[str]:
         """

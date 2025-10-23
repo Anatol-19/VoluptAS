@@ -13,6 +13,7 @@ import os
 import shutil
 from pathlib import Path
 from .zoho_oauth_wizard import ZohoOAuthWizard
+from src.config import Config
 
 
 class TokenRefreshThread(QThread):
@@ -87,7 +88,7 @@ class SettingsDialog(QDialog):
         self.setMinimumWidth(750)
         self.setMinimumHeight(600)
         
-        self.project_root = Path(__file__).resolve().parent.parent.parent.parent
+        self.project_root = Config.BASE_DIR
         
         # Пути к файлам настроек - из профиля проекта
         if project_manager:
@@ -95,9 +96,9 @@ class SettingsDialog(QDialog):
             if current_project:
                 profile = project_manager.get_profile(current_project.settings_profile)
                 if profile:
-                    self.zoho_env_path = profile.zoho_env_path or self.project_root / 'credentials' / 'zoho.env'
-                    self.google_json_path = profile.google_json_path or self.project_root / 'credentials' / 'google_credentials.json'
-                    self.qase_env_path = profile.qase_env_path or self.project_root / 'credentials' / 'qase.env'
+                    self.zoho_env_path = profile.zoho_env_path or Config.get_credentials_path('zoho.env')
+                    self.google_json_path = profile.google_json_path or Config.get_credentials_path('google_credentials.json')
+                    self.qase_env_path = profile.qase_env_path or Config.get_credentials_path('qase.env')
                 else:
                     # Профиль не найден - используем дефолтные пути
                     self._set_default_paths()
@@ -124,9 +125,9 @@ class SettingsDialog(QDialog):
     
     def _set_default_paths(self):
         """Установить дефолтные пути к credentials"""
-        self.zoho_env_path = self.project_root / 'credentials' / 'zoho.env'
-        self.google_json_path = self.project_root / 'credentials' / 'google_credentials.json'
-        self.qase_env_path = self.project_root / 'credentials' / 'qase.env'
+        self.zoho_env_path = Config.get_credentials_path('zoho.env')
+        self.google_json_path = Config.get_credentials_path('google_credentials.json')
+        self.qase_env_path = Config.get_credentials_path('qase.env')
     
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -644,7 +645,7 @@ class SettingsDialog(QDialog):
         """Сохранить все настройки"""
         try:
             # Создаём папку credentials если нет
-            self.project_root.joinpath('credentials').mkdir(parents=True, exist_ok=True)
+            Config.get_credentials_path().mkdir(parents=True, exist_ok=True)
             
             # Zoho
             self.save_zoho_settings()
