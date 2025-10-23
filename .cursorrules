@@ -1,0 +1,168 @@
+# VoluptAS Project Context for AI Assistants
+
+## Project Overview
+VoluptAS - QA Management System with multi-project support, integrations (Zoho, Google Sheets, Qase.io), test planning, coverage tracking, and BDD feature generation.
+
+## Tech Stack
+- **Backend**: Python 3.11+, SQLAlchemy 2.0, SQLite
+- **UI**: PyQt6
+- **Integrations**: Google Sheets API, Zoho Projects API, Qase.io API
+- **Testing**: pytest, behave (BDD)
+
+## Project Structure
+```
+VoluptAS/
+├── main.py                    # Application entry point
+├── src/
+│   ├── models/                # SQLAlchemy models (user.py, functional_item.py, etc.)
+│   ├── db/                    # Database management (database.py, database_manager.py)
+│   ├── ui/                    # PyQt6 UI components
+│   │   ├── dialogs/           # Modal dialogs
+│   │   └── widgets/           # Reusable UI widgets
+│   ├── services/              # Business logic (GoogleSheetsExporter, etc.)
+│   └── integrations/          # API clients (zoho/, google/, qase/)
+├── data/
+│   ├── projects/              # Multi-project databases (each project has own DB)
+│   └── config/                # Project config (NOT in git - machine-specific)
+├── credentials/               # API credentials (zoho.env, google_credentials.json, qase.env)
+├── docs/                      # Documentation
+└── scripts/                   # Utility scripts
+```
+
+## Architecture Patterns
+
+### 1. Multi-Project Architecture
+- Each project has its own SQLite database in `data/projects/{project_id}/`
+- Config files (`projects.json`, `profiles.json`) are machine-specific
+- `ProjectManager` handles project switching and lifecycle
+- `DatabaseManager` singleton manages DB connections per project
+
+### 2. Database Layer
+- **Models**: SQLAlchemy ORM models in `src/models/`
+- **Session Management**: Use parent session from `DatabaseManager.get_session()`
+- **DO NOT** create `SessionLocal()` directly in UI widgets - always pass session from parent
+- Models: `FunctionalItem`, `User`, `FunctionalItemRelation`, `Dictionary`, `ZohoTask`, `ReportTemplate`
+
+### 3. UI Patterns
+- **MainWindow**: Single main window with tabs
+- **Dialogs**: Modal dialogs for settings, project management, entity editing
+- **Widgets**: Reusable components (FilterWidget, FullGraphTabWidget, etc.)
+- **Threading**: Use `QThread` for long-running tasks (API calls, DB operations)
+
+### 4. Integration Layer
+- **Google Sheets**: `GoogleSheetsClient` with batch processing, hyperlinks, templates
+- **Zoho**: `Zoho_api_client` with OAuth refresh, project management
+- **Qase.io**: `QaseClient` for test case sync
+
+### 5. Credentials Management
+- Stored in `credentials/` folder (NOT in git!)
+- Unified naming: `zoho.env`, `google_credentials.json`, `qase.env`
+- Profiles: `production` and `test` with separate credential sets
+- Settings dialog provides UI for credential management
+
+## Code Style
+
+### Python
+- Follow PEP 8
+- Use type hints where appropriate
+- Docstrings for all public functions/classes
+- Russian comments OK for internal notes, but public docs in English
+
+### Database
+- Use SQLAlchemy ORM, not raw SQL
+- Always pass session from parent widget/service
+- Close sessions in `finally` blocks
+- Use `session.commit()` explicitly, not auto-commit
+
+### UI
+- Use PyQt6 (not PyQt5!)
+- Layouts over absolute positioning
+- Signals/slots for communication
+- QThread for background work
+- Status bar for user feedback
+
+## Common Pitfalls
+
+### ❌ DON'T
+- Create `SessionLocal()` in UI widgets → pass parent session
+- Use absolute file paths in code → use relative to project root
+- Commit sensitive data (credentials, .db files) → check .gitignore
+- Block UI thread with long operations → use QThread
+- Mix Russian/English in user-facing text → stick to Russian in UI
+
+### ✅ DO
+- Use `DatabaseManager.get_session()` for database access
+- Handle exceptions and show user-friendly error messages
+- Log errors with `logger.error()` and traceback
+- Test on multiple machines (check for absolute paths)
+- Update `.gitignore` when adding new config/credential files
+
+## Key Files to Reference
+
+### Core
+- `main.py` - App entry, MainWindow initialization
+- `src/db/database_manager.py` - Database singleton, session management
+- `src/models/functional_item.py` - Main entity model
+
+### UI
+- `src/ui/dialogs/settings_dialog.py` - Centralized settings (Google, Zoho, Qase)
+- `src/ui/dialogs/project_dialogs.py` - Project management dialogs
+- `src/ui/widgets/full_graph_tab.py` - Graph visualization
+
+### Integration
+- `src/integrations/google/google_sheets_client.py` - Google Sheets API
+- `src/integrations/zoho/Zoho_api_client.py` - Zoho Projects API
+- `src/services/GoogleSheetsExporter.py` - Export service
+
+## Current Development Focus (2025-10-23)
+
+### High Priority Bugs
+1. ❗ Credentials path issues - using absolute paths instead of relative
+2. ❗ Google settings save fails with zoho.env path error
+3. ❗ Project creation doesn't rollback on error
+4. ❗ Missing ZOHO_AUTHORIZATION_CODE in UI
+
+### Active Features
+- Multi-project support with migration
+- Centralized settings dialog
+- Project deletion functionality
+- Improved UX for import/export with prepositions
+
+### Planned
+- Auto-reload settings without project restart
+- Undo/redo for entity editing
+- Portable project validation script
+
+## Testing
+
+### Manual Testing Checklist
+- [ ] Create new project on different machine
+- [ ] Import/export to Google Sheets
+- [ ] Switch between projects
+- [ ] Update credentials without restart
+- [ ] Check no absolute paths in logs
+
+### Automated Testing
+- Run `pytest` from project root
+- BDD tests with `behave`
+
+## Git Workflow
+- Main branch: `main`
+- Commit message format: `type: description` (e.g., `fix: Use relative paths for credentials`)
+- Always test on PC2 after push to verify portability
+
+## Deployment
+- Run `setup.bat` on new machine (auto-installs deps, creates venv)
+- Copy credential files to `credentials/` folder
+- Create first project via UI
+
+## Documentation
+- `README.md` - Project overview, quick start
+- `docs/USER_GUIDE_Projects.md` - Multi-project user guide
+- `docs/MIGRATION_CONCEPT.md` - Migration from old to new structure
+- `CHANGELOG.md` - Version history
+
+---
+
+**Last Updated**: 2025-10-23
+**Version**: 0.3.4+
