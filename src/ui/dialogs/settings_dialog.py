@@ -667,11 +667,6 @@ class SettingsDialog(QDialog):
     
     def save_zoho_settings(self):
         """Сохранить настройки Zoho"""
-        # Backup
-        if self.zoho_env_path.exists():
-            backup_path = self.zoho_env_path.parent / 'zoho.env.backup'
-            shutil.copy2(self.zoho_env_path, backup_path)
-        
         content = f"""ZOHO_CLIENT_ID={self.zoho_client_id_edit.text().strip()}
 ZOHO_CLIENT_SECRET={self.zoho_client_secret_edit.text().strip()}
 ZOHO_REFRESH_TOKEN={self.zoho_refresh_token_edit.text().strip()}
@@ -691,21 +686,11 @@ ZOHO_REGION={self.zoho_region_combo.currentText()}
             # Проверяем валидность
             json.loads(content)  # Бросит исключение если невалидный
             
-            # Backup
-            if self.google_json_path.exists():
-                backup_path = self.google_json_path.parent / 'google_credentials.json.backup'
-                shutil.copy2(self.google_json_path, backup_path)
-            
             with open(self.google_json_path, 'w', encoding='utf-8') as f:
                 f.write(content)
     
     def save_qase_settings(self):
         """Сохранить настройки Qase"""
-        # Backup
-        if self.qase_env_path.exists():
-            backup_path = self.qase_env_path.parent / 'qase.env.backup'
-            shutil.copy2(self.qase_env_path, backup_path)
-        
         content = f"""QASE_API_TOKEN={self.qase_token_edit.text().strip()}
 QASE_PROJECT_CODE={self.qase_project_edit.text().strip()}
 QASE_BASE_URL={self.qase_url_edit.text().strip()}
