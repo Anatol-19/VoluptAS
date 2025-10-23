@@ -396,7 +396,7 @@ class NewProjectDialog(QDialog):
             try:
                 default_user = User(
                     name='Default User',
-                    role='QA',
+                    position='QA',
                     email='user@example.com',
                     is_active=1
                 )
