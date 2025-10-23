@@ -1265,6 +1265,8 @@ class MainWindow(QMainWindow):
         
         self.statusBar().showMessage('Готов')
         # Печатаем баннер и путь запуска в консоль для быстрой диагностики
+        from src.utils.version import get_version_banner
+        banner = get_version_banner(project_root)
         print(f"[VoluptAS] {banner} | root={project_root}")
     
     def load_data(self):

@@ -1,0 +1,18 @@
+{
+  "default": {
+    "id": "default",
+    "name": "Default Project",
+    "description": "Мигрированный проект из старой структуры",
+    "database_path": "C:\\ITS_QA\\VoluptAS\\data\\projects\\default\\voluptas.db",
+    "bdd_features_dir": "C:\\ITS_QA\\VoluptAS\\data\\projects\\default\\bdd_features",
+    "reports_dir": "C:\\ITS_QA\\VoluptAS\\data\\projects\\default\\reports",
+    "settings_profile": "production",
+    "created_at": "2025-10-22T10:42:10.034920",
+    "last_used": null,
+    "is_active": true,
+    "tags": [
+      "migrated"
+    ],
+    "custom_fields": {}
+  }
+}
