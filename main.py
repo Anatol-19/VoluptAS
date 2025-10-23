@@ -927,8 +927,8 @@ class MainWindow(QMainWindow):
         # === НОВОЕ МЕНЮ ===
         menubar = self.menuBar()
         
-        # Меню "Файл"
-        file_menu = menubar.addMenu('📁 Файл')
+        # Меню "Проект"
+        file_menu = menubar.addMenu('🗂️ Проект')
         
         # Проекты
         switch_project_action = QAction('🗂️ Переключить проект...', self)
@@ -954,22 +954,22 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         
         # Экспорт
-        export_google_action = QAction('📤 Экспорт Google Sheets', self)
+        export_google_action = QAction('📤 Экспорт В Google Sheets', self)
         export_google_action.triggered.connect(self.export_google_sheets)
         file_menu.addAction(export_google_action)
         
-        export_csv_action = QAction('📤 Экспорт CSV', self)
+        export_csv_action = QAction('📤 Экспорт В CSV', self)
         export_csv_action.triggered.connect(self.export_csv)
         file_menu.addAction(export_csv_action)
         
         file_menu.addSeparator()
         
         # Импорт
-        import_google_action = QAction('📥 Импорт Google Sheets', self)
+        import_google_action = QAction('📥 Импорт ИЗ Google Sheets', self)
         import_google_action.triggered.connect(self.import_google_sheets)
         file_menu.addAction(import_google_action)
         
-        import_csv_action = QAction('📥 Импорт CSV', self)
+        import_csv_action = QAction('📥 Импорт ИЗ CSV', self)
         import_csv_action.triggered.connect(self.import_data)
         file_menu.addAction(import_csv_action)
         
