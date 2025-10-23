@@ -35,6 +35,12 @@ build/
 *.db
 *.sqlite
 *.sqlite3
+*.db.old
+
+# Project config (machine-specific paths)
+data/config/current_project.txt
+data/config/projects.json
+data/config/profiles.json
 
 # Logs
 *.log
