@@ -87,6 +87,12 @@ class ProjectSelectorDialog(QDialog):
         new_project_btn.clicked.connect(self.create_new_project)
         buttons_layout.addWidget(new_project_btn)
         
+        self.delete_btn = QPushButton('🗑️ Удалить проект')
+        self.delete_btn.setEnabled(False)
+        self.delete_btn.clicked.connect(self.delete_project)
+        self.delete_btn.setStyleSheet('color: #d32f2f;')
+        buttons_layout.addWidget(self.delete_btn)
+        
         buttons_layout.addStretch()
         
         self.select_btn = QPushButton('Выбрать')
@@ -160,10 +166,12 @@ class ProjectSelectorDialog(QDialog):
         
         if not selected_items:
             self.select_btn.setEnabled(False)
+            self.delete_btn.setEnabled(False)
             self.clear_info()
             return
         
         self.select_btn.setEnabled(True)
+        self.delete_btn.setEnabled(True)
         
         item = selected_items[0]
         project_id = item.data(Qt.ItemDataRole.UserRole)
@@ -214,6 +222,46 @@ class ProjectSelectorDialog(QDialog):
     def on_project_double_click(self, item):
         """Двойной клик - выбор проекта"""
         self.accept()
+    
+    def delete_project(self):
+        """Удалить проект"""
+        if not self.selected_project_id:
+            return
+        
+        project = self.project_manager.projects.get(self.selected_project_id)
+        if not project:
+            return
+        
+        reply = QMessageBox.question(
+            self, 'Подтвердите удаление',
+            f'Вы уверены, что хотите удалить проект "{project.name}"?\n\n'
+            '⚠️ Это действие нельзя отменить!\n'
+            'Будут удалены: БД, отчёты, BDD фичи.',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        
+        try:
+            import shutil
+            del self.project_manager.projects[self.selected_project_id]
+            self.project_manager.save()
+            
+            project_dir = project.database_path.parent
+            if project_dir.exists():
+                shutil.rmtree(project_dir)
+            
+            logger.info(f"✅ Проект {self.selected_project_id} удалён")
+            QMessageBox.information(self, 'Успех', f'✅ Проект "{project.name}" удалён')
+            
+            self.selected_project_id = None
+            self.load_projects()
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка удаления: {e}", exc_info=True)
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось удалить:\n{e}')
     
     def create_new_project(self):
         """Создание нового проекта"""
@@ -372,6 +420,9 @@ class NewProjectDialog(QDialog):
         tags_text = self.tags_edit.text().strip()
         tags = [t.strip() for t in tags_text.split(',') if t.strip()] if tags_text else []
         
+        project = None
+        db_path = None
+        
         try:
             # Создаём проект
             project = self.project_manager.create_project(
@@ -387,7 +438,8 @@ class NewProjectDialog(QDialog):
             # Инициализируем БД
             from src.db.database_manager import get_database_manager
             db_manager = get_database_manager()
-            db_manager.connect_to_database(project.database_path)
+            db_path = project.database_path
+            db_manager.connect_to_database(db_path)
             db_manager.init_database()
             
             # Создаём дефолтного пользователя
@@ -416,7 +468,29 @@ class NewProjectDialog(QDialog):
             
         except Exception as e:
             logger.error(f"Ошибка создания проекта: {e}", exc_info=True)
-            QMessageBox.critical(self, 'Ошибка', f'Не удалось создать проект:\n{e}')
+            
+            # Откат изменений
+            if project:
+                logger.info(f"🔄 Откат создания проекта {project_id}...")
+                try:
+                    # Удаляем из projects.json
+                    if project_id in self.project_manager.projects:
+                        del self.project_manager.projects[project_id]
+                        self.project_manager.save()
+                    
+                    # Удаляем папку проекта
+                    if db_path:
+                        import shutil
+                        project_dir = db_path.parent
+                        if project_dir.exists():
+                            shutil.rmtree(project_dir)
+                            logger.info(f"✅ Папка проекта удалена: {project_dir}")
+                    
+                    logger.info("✅ Откат завершён")
+                except Exception as rollback_error:
+                    logger.error(f"⚠️ Ошибка отката: {rollback_error}")
+            
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось создать проект:\n{e}\n\nИзменения отменены.')
 
 
 class ProjectSettingsDialog(QDialog):
