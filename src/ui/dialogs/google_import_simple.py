@@ -9,6 +9,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from pathlib import Path
 import re
 import webbrowser
+from src.config import Config
 import logging
 
 logger = logging.getLogger(__name__)
@@ -149,24 +150,13 @@ class GoogleImportSimpleDialog(QDialog):
             return
         
         # Проверяем credentials (используем единый путь из настроек)
-        project_root = Path(__file__).resolve().parent.parent.parent.parent
-        creds_primary = project_root / 'credentials' / 'google_credentials.json'
-        creds_alt1 = project_root / 'credentials' / 'google_service_account.json'
-        creds_alt2 = project_root / 'credentials' / 'service_account.json'
-        
-        if creds_primary.exists():
-            creds_path = creds_primary
-        elif creds_alt1.exists():
-            creds_path = creds_alt1
-        elif creds_alt2.exists():
-            creds_path = creds_alt2
-        else:
+        creds_path = Config.get_credentials_path('google_credentials.json')
+        if not creds_path.exists():
+            logging.error(f'Google credentials не найдены: {creds_path}')
             QMessageBox.critical(
                 self,
                 'Ошибка',
-                'Не найден файл с Google credentials!\\n\\n'
-                'Заполните JSON в Настройки → Google API.\\n'
-                'Ожидаемое имя: credentials/google_credentials.json'
+                f'Не найден файл с Google credentials!\n\nЗаполните JSON в Настройки → Google API.\nОжидаемое имя: {creds_path}'
             )
             return
         

@@ -5,8 +5,8 @@
 """
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
-from src.db.database import Base
-from datetime import datetime
+from src.db.base import Base
+from datetime import datetime, timezone
 
 
 class ReportTemplate(Base):
@@ -28,9 +28,9 @@ class ReportTemplate(Base):
     
     # Метаданные
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
     def __repr__(self):
         return f"<ReportTemplate(name='{self.name}', type='{self.template_type}')>"
     

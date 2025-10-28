@@ -8,7 +8,7 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from src.db.database import Base
+from src.db.base import Base
 from typing import Optional, List, Dict
 
 

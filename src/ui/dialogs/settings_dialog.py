@@ -14,6 +14,7 @@ import shutil
 from pathlib import Path
 from .zoho_oauth_wizard import ZohoOAuthWizard
 from src.config import Config
+import logging
 
 
 class TokenRefreshThread(QThread):
@@ -220,6 +221,11 @@ class SettingsDialog(QDialog):
         access_layout.addWidget(self.refresh_token_btn)
         form.addRow('Access Token:', access_layout)
         
+        # Authorization Code
+        self.zoho_auth_code_edit = QLineEdit()
+        self.zoho_auth_code_edit.setPlaceholderText('Введите Authorization Code из Zoho OAuth')
+        form.addRow('Authorization Code:', self.zoho_auth_code_edit)
+
         # Portal Name
         self.zoho_portal_edit = QLineEdit()
         self.zoho_portal_edit.setPlaceholderText('vrbgroup')
@@ -675,26 +681,34 @@ ZOHO_PORTAL_NAME={self.zoho_portal_edit.text().strip()}
 ZOHO_PROJECT_ID={self.zoho_project_id_edit.text().strip()}
 ZOHO_REGION={self.zoho_region_combo.currentText()}
 """
-        
-        with open(self.zoho_env_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-    
+        try:
+            with open(self.zoho_env_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+        except Exception as e:
+            logging.error(f'Ошибка сохранения Zoho credentials: {e}')
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить Zoho credentials (zoho.env):\n{e}')
+
     def save_google_settings(self):
         """Сохранить настройки Google"""
         content = self.google_json_edit.toPlainText().strip()
         if content:
-            # Проверяем валидность
-            json.loads(content)  # Бросит исключение если невалидный
-            
-            with open(self.google_json_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-    
+            try:
+                json.loads(content)  # Бросит исключение если невалидный
+                with open(self.google_json_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+            except Exception as e:
+                logging.error(f'Ошибка сохранения Google credentials: {e}')
+                QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить Google credentials (google_credentials.json):\n{e}')
+
     def save_qase_settings(self):
         """Сохранить настройки Qase"""
         content = f"""QASE_API_TOKEN={self.qase_token_edit.text().strip()}
 QASE_PROJECT_CODE={self.qase_project_edit.text().strip()}
 QASE_BASE_URL={self.qase_url_edit.text().strip()}
 """
-        
-        with open(self.qase_env_path, 'w', encoding='utf-8') as f:
-            f.write(content)
+        try:
+            with open(self.qase_env_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+        except Exception as e:
+            logging.error(f'Ошибка сохранения Qase credentials: {e}')
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить Qase credentials (qase.env):\n{e}')

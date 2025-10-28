@@ -196,7 +196,11 @@ class ProjectManager:
         project_dir = self.config_dir.parent / 'projects' / project_id
         project_dir.mkdir(exist_ok=True, parents=True)
         
-        db_path = project_dir / 'voluptas.db'
+        # --- Изменено: имя БД зависит от проекта ---
+        if project_id == 'default':
+            db_path = project_dir / 'voluptas.db'
+        else:
+            db_path = project_dir / f'{project_id}.db'
         bdd_dir = project_dir / 'bdd_features'
         reports_dir = project_dir / 'reports'
         

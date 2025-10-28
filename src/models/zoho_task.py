@@ -6,7 +6,7 @@
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from src.db.database import Base
+from src.db.base import Base
 from datetime import datetime
 
 

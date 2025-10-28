@@ -1,4 +1,6 @@
-﻿from .database import engine, SessionLocal, Base, get_db, init_db, DATABASE_PATH, DATABASE_URL
+﻿from .database import get_engine, get_session_local, Base, get_db, init_db
 
-__all__ = ['engine', 'SessionLocal', 'Base', 'get_db', 'init_db', 'DATABASE_PATH', 'DATABASE_URL']
+SessionLocal = get_session_local()
+engine = get_engine()
 
+__all__ = ['engine', 'SessionLocal', 'Base', 'get_db', 'init_db']

@@ -10,7 +10,7 @@
 """
 
 from sqlalchemy import Column, Integer, String, Boolean
-from src.db.database import Base
+from src.db.base import Base
 
 
 class Dictionary(Base):

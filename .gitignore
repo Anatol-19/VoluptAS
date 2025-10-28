@@ -60,7 +60,7 @@ credentials*.json
 # Centralized credentials folder
 credentials/*.json
 credentials/*.env
-!credentials/README.md
+!data/credentials/README.md
 
 # Temporary
 tmp/
