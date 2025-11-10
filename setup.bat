@@ -74,6 +74,36 @@ if errorlevel 1 (
     exit /b 1
 )
 echo.
+
+REM Проверка и восстановление credentials
+if not exist "credentials\zoho.env" (
+    if exist "credentials\zoho.env.backup" (
+        copy /Y "credentials\zoho.env.backup" "credentials\zoho.env"
+        echo [INFO] credentials\zoho.env восстановлен из .backup
+    ) else (
+        echo [WARN] credentials\zoho.env отсутствует. Настройте через UI или вручную.
+    )
+)
+if not exist "credentials\google_credentials.json" (
+    if exist "credentials\google_credentials.json.backup" (
+        copy /Y "credentials\google_credentials.json.backup" "credentials\google_credentials.json"
+        echo [INFO] credentials\google_credentials.json восстановлен из .backup
+    ) else (
+        echo [WARN] credentials\google_credentials.json отсутствует. Настройте через UI или вручную.
+    )
+)
+if not exist "credentials\qase.env" (
+    echo [WARN] credentials\qase.env отсутствует. Настройте через UI.
+)
+
+REM Проверка портабельности
+python scripts/check_portability.py
+if errorlevel 1 (
+    echo [ERROR] Portability check failed. Исправьте проблемы перед запуском.
+    pause
+    exit /b 1
+)
+
 echo ====================================
 echo Setup Complete!
 echo ====================================

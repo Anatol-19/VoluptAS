@@ -279,3 +279,41 @@ class ProjectManager:
         )
         
         self.save()
+
+    def delete_project(self, project_id: str) -> bool:
+        """
+        Удаляет проект из конфигурации и связанные ресурсы
+        """
+        if project_id not in self.projects:
+            print(f"⚠️ Проект '{project_id}' не найден.")
+            return False
+        project = self.projects[project_id]
+        # Удаление связанных файлов и директорий
+        try:
+            # Удалить БД
+            if project.database_path.exists():
+                project.database_path.unlink()
+            # Удалить директорию BDD features
+            if project.bdd_features_dir.exists():
+                for f in project.bdd_features_dir.glob("*"):
+                    f.unlink()
+                project.bdd_features_dir.rmdir()
+            # Удалить директорию отчётов
+            if project.reports_dir.exists():
+                for f in project.reports_dir.glob("*"):
+                    f.unlink()
+                project.reports_dir.rmdir()
+        except Exception as e:
+            print(f"⚠️ Ошибка при удалении файлов проекта: {e}")
+        # Удалить из конфигурации
+        del self.projects[project_id]
+        self.save_projects()
+        print(f"✅ Проект '{project_id}' удалён.")
+        return True
+
+    def save_projects(self):
+        """
+        Сохраняет проекты в projects.json
+        """
+        with open(self.config_file, 'w', encoding='utf-8') as f:
+            json.dump({pid: proj.to_dict() for pid, proj in self.projects.items()}, f, ensure_ascii=False, indent=2)

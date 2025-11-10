@@ -10,8 +10,7 @@
 """
 
 from PyQt6.QtWidgets import QWidget, QTabWidget, QVBoxLayout
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import pyqtSignal
 
 
 class MainTabsWidget(QWidget):
@@ -50,44 +49,47 @@ class MainTabsWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        # Создание QTabWidget
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setTabPosition(QTabWidget.TabPosition.North)
-        self.tab_widget.setDocumentMode(True)  # Более плоский стиль
-        
-        # Добавление табов (пока с placeholder виджетами)
-        self._add_tabs()
-        
+        # Создание виджета с вкладками
+        self.tab_widget = QTabWidget(self)
         layout.addWidget(self.tab_widget)
-    
-    def _add_tabs(self):
-        """Добавление всех табов"""
-        from src.ui.widgets.table_graph_tab import TableGraphTabWidget
-        from src.ui.widgets.full_graph_tab import FullGraphTabWidget
-        from src.ui.widgets.bdd_tab import BddTabWidget
-        from src.ui.widgets.coverage_matrix_tab import CoverageMatrixTabWidget
-        from src.ui.widgets.infra_maturity_tab import InfraMaturityTabWidget
-        
-        # Таб 1: Таблица + Мини-граф
-        self.table_graph_tab = TableGraphTabWidget(self)
-        self.tab_widget.addTab(self.table_graph_tab, "📊 Таблица")
-        
-        # Таб 2: Большой граф
-        self.full_graph_tab = FullGraphTabWidget(self)
-        self.tab_widget.addTab(self.full_graph_tab, "🌐 Граф")
-        
-        # Таб 3: BDD Features
-        self.bdd_tab = BddTabWidget(self)
-        self.tab_widget.addTab(self.bdd_tab, "🧑‍💻 BDD")
-        
-        # Таб 4: Матрица трассировок
-        self.coverage_tab = CoverageMatrixTabWidget(self)
-        self.tab_widget.addTab(self.coverage_tab, "📋 Трассировки")
-        
-        # Таб 5: INFRA Maturity
-        self.infra_tab = InfraMaturityTabWidget(self)
-        self.tab_widget.addTab(self.infra_tab, "🏗️ INFRA")
-    
+
+        # Таб с таблицей и мини-графом
+        from src.ui.views.table_view import TableView
+        from src.ui.mini_graph_widget import MiniGraphWidget
+
+        table_widget = TableView(self)
+        mini_graph = MiniGraphWidget(self)
+        table_container = QWidget()
+        table_layout = QVBoxLayout(table_container)
+        table_layout.addWidget(table_widget, stretch=2)
+        table_layout.addWidget(mini_graph, stretch=1)
+        self.tab_widget.addTab(table_container, "Таблица")
+
+        # Таб с большим графом
+        from src.ui.graph_view_new import GraphView
+        graph_widget = GraphView(self)
+        self.tab_widget.addTab(graph_widget, "Граф")
+
+        # Таб с BDD Features
+        from src.ui.views.bdd_view import BDDView
+        bdd_widget = BDDView(self)
+        self.tab_widget.addTab(bdd_widget, "BDD")
+
+        # Таб с матрицей трассировок
+        from src.ui.views.coverage_view import CoverageMatrixView
+        coverage_widget = CoverageMatrixView(self)
+        self.tab_widget.addTab(coverage_widget, "Трассировка")
+
+        # Таб с INFRA Maturity
+        from src.ui.views.infra_view import InfraMaturityView
+        infra_widget = InfraMaturityView(self)
+        self.tab_widget.addTab(infra_widget, "Инфраструктура")
+
+        # Подключение сигналов
+        self.tab_widget.currentChanged.connect(self._tab_changed)
+        table_widget.item_selected.connect(self.item_selected)
+        graph_widget.item_selected.connect(self.item_selected)
+
     def _connect_signals(self):
         """Подключение сигналов"""
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
@@ -102,6 +104,11 @@ class MainTabsWidget(QWidget):
         tab_name = self.tab_widget.tabText(index)
         self.tab_changed.emit(index, tab_name)
     
+    def _tab_changed(self, index):
+        """Обработчик смены активного таба"""
+        tab_names = ["Таблица", "Граф", "BDD", "Трассировка", "Инфраструктура"]
+        self.tab_changed.emit(index, tab_names[index])
+
     def switch_to_tab(self, index: int):
         """
         Переключение на указанный таб
@@ -140,16 +147,40 @@ class MainTabsWidget(QWidget):
         for key_seq, tab_index in shortcuts:
             shortcut = QShortcut(key_seq, self)
             shortcut.activated.connect(lambda idx=tab_index: self.switch_to_tab(idx))
-    
+
+        # Ctrl+Tab - следующий таб
+        next_tab = QShortcut(QKeySequence("Ctrl+Tab"), self)
+        next_tab.activated.connect(self._next_tab)
+
+        # Ctrl+Shift+Tab - предыдущий таб
+        prev_tab = QShortcut(QKeySequence("Ctrl+Shift+Tab"), self)
+        prev_tab.activated.connect(self._prev_tab)
+
+    def _next_tab(self):
+        """Переключение на следующий таб"""
+        current = self.tab_widget.currentIndex()
+        self.tab_widget.setCurrentIndex((current + 1) % self.tab_widget.count())
+
+    def _prev_tab(self):
+        """Переключение на предыдущий таб"""
+        current = self.tab_widget.currentIndex()
+        self.tab_widget.setCurrentIndex((current - 1) % self.tab_widget.count())
+
     def load_data(self):
         """Загрузка данных во все табы"""
         # В будущем здесь будет логика загрузки данных из БД
         pass
     
     def refresh_all(self):
-        """Обновление данных во всех табах"""
-        self.table_graph_tab.refresh()
-        self.full_graph_tab.refresh()
-        self.bdd_tab.refresh()
-        self.coverage_tab.refresh()
-        self.infra_tab.refresh()
+        """Обновление всех компонентов"""
+        # Перезагружаем данные во всех вкладках
+        for i in range(self.tab_widget.count()):
+            widget = self.tab_widget.widget(i)
+            if hasattr(widget, 'refresh'):
+                widget.refresh()
+            elif hasattr(widget, 'layout'):
+                # Для составных виджетов (как таблица + мини-граф)
+                for j in range(widget.layout().count()):
+                    child = widget.layout().itemAt(j).widget()
+                    if hasattr(child, 'refresh'):
+                        child.refresh()

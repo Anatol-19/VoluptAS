@@ -27,6 +27,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM Проверка портабельности
+python scripts/check_portability.py
+if errorlevel 1 (
+    echo [ERROR] Portability check failed. Исправьте проблемы перед запуском.
+    pause
+    exit /b 1
+)
+
 REM Run app
 echo.
 echo Starting VoluptAS...

@@ -5,9 +5,8 @@ Report Generator Dialog
 """
 
 from PyQt6.QtWidgets import *
-from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
-from pathlib import Path
+from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
@@ -232,8 +231,6 @@ class ReportGeneratorDialog(QDialog):
         template_name = self.template_combo.currentText()
         date_str = datetime.now().strftime('%Y-%m-%d')
         default_filename = f"{template_name}_{date_str}.md"
-        
-        from datetime import datetime
         
         file_path, _ = QFileDialog.getSaveFileName(
             self,

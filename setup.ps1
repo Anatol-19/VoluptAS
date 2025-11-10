@@ -72,11 +72,10 @@ if (-not (Test-Path ".venv")) {
 }
 
 # Активируем окружение
-$venvPython = ".\.venv\Scripts\python.exe"
 $venvPip = ".\.venv\Scripts\pip.exe"
 
 Write-Host "`n[3/6] Установка зависимостей..." -ForegroundColor Yellow
-Write-Host "  🔧 Обновляю pip, setuptools, wheel..." -ForegroundColor Cyan
+Write-Host "  Обновляю pip, setuptools, wheel..." -ForegroundColor Cyan
 & $venvPip install --upgrade pip setuptools wheel --quiet
 
 Write-Host "  🔧 Устанавливаю зависимости из requirements.txt..." -ForegroundColor Cyan
@@ -100,59 +99,55 @@ if (-not (Test-Path "credentials")) {
 
 Write-Host "`n[5/6] Восстановление credentials..." -ForegroundColor Yellow
 
+# Восстановление credentials
 if ($SkipCredentials) {
-    Write-Host "  ⏭️  Пропущено (флаг -SkipCredentials)" -ForegroundColor Cyan
+    Write-Host "  Пропущено (флаг -SkipCredentials)" -ForegroundColor Cyan
 } else {
     $restored = 0
-    
-    # Zoho
     if (Test-Path "credentials\zoho.env.backup") {
         if (-not (Test-Path "credentials\zoho.env") -or $Force) {
             Copy-Item "credentials\zoho.env.backup" "credentials\zoho.env" -Force
-            Write-Host "  ✅ zoho.env восстановлен" -ForegroundColor Green
+            Write-Host "  zoho.env восстановлен" -ForegroundColor Green
             $restored++
         } else {
-            Write-Host "  ⚠️  zoho.env уже существует (пропущено)" -ForegroundColor Yellow
+            Write-Host "  zoho.env уже существует (пропущено)" -ForegroundColor Yellow
         }
     }
-    
-    # Google
     if (Test-Path "credentials\google_credentials.json.backup") {
         if (-not (Test-Path "credentials\google_credentials.json") -or $Force) {
             Copy-Item "credentials\google_credentials.json.backup" "credentials\google_credentials.json" -Force
-            Write-Host "  ✅ google_credentials.json восстановлен" -ForegroundColor Green
+            Write-Host "  google_credentials.json восстановлен" -ForegroundColor Green
             $restored++
         } else {
-            Write-Host "  ⚠️  google_credentials.json уже существует (пропущено)" -ForegroundColor Yellow
+            Write-Host "  google_credentials.json уже существует (пропущено)" -ForegroundColor Yellow
         }
     }
-    
-    # Qase (не из backup - уже есть токен)
     if (-not (Test-Path "credentials\qase.env")) {
-        Write-Host "  ⚠️  qase.env отсутствует (настройте через UI)" -ForegroundColor Yellow
+        Write-Host "  qase.env отсутствует (настройте через UI)" -ForegroundColor Yellow
     } else {
-        Write-Host "  ✅ qase.env существует" -ForegroundColor Green
+        Write-Host "  qase.env существует" -ForegroundColor Green
     }
-    
     if ($restored -eq 0 -and -not (Test-Path "credentials\*.backup")) {
-        Write-Host "  ℹ️  Нет .backup файлов для восстановления" -ForegroundColor Cyan
-        Write-Host "  💡 Настройте credentials через: Файл → Настройки" -ForegroundColor Yellow
+        Write-Host "  Нет .backup файлов для восстановления" -ForegroundColor Cyan
+        Write-Host "  Настройте credentials через: Файл → Настройки" -ForegroundColor Yellow
     }
 }
-
-Write-Host "`n[6/6] Инициализация базы данных..." -ForegroundColor Yellow
-
-if (-not (Test-Path "data\voluptas.db")) {
-    Write-Host "  🔧 БД будет создана при первом запуске" -ForegroundColor Cyan
-} else {
-    Write-Host "  ✅ БД уже существует: data\voluptas.db" -ForegroundColor Green
+Write-Host "`n[6/6] Проверка портабельности..." -ForegroundColor Yellow
+try {
+    & python scripts/check_portability.py
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  Portability check failed. Исправьте проблемы перед запуском." -ForegroundColor Red
+        exit 1
+    } else {
+        Write-Host "  Portability check passed." -ForegroundColor Green
+    }
+} catch {
+    Write-Host "  Не удалось запустить portability check." -ForegroundColor Red
 }
-
 Write-Host "`n========================================" -ForegroundColor Green
-Write-Host "   ✅ Настройка завершена!" -ForegroundColor Green
+Write-Host "   Настройка завершена!" -ForegroundColor Green
 Write-Host "========================================`n" -ForegroundColor Green
-
-Write-Host "📝 Следующие шаги:" -ForegroundColor Yellow
+Write-Host "Следующие шаги:" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  1. Запуск приложения:" -ForegroundColor Cyan
 Write-Host "     .\start_voluptas.bat" -ForegroundColor White
@@ -163,13 +158,11 @@ Write-Host ""
 Write-Host "  3. Импорт данных:" -ForegroundColor Cyan
 Write-Host "     Файл → Импорт → CSV/Excel" -ForegroundColor White
 Write-Host ""
-
 if (-not $SkipCredentials -and (Test-Path "credentials\*.backup")) {
-    Write-Host "⚠️  Проверьте токены в credentials/*.env" -ForegroundColor Yellow
+    Write-Host "  Проверьте токены в credentials/*.env" -ForegroundColor Yellow
     Write-Host "   Некоторые токены могут быть устаревшими" -ForegroundColor Gray
     Write-Host ""
 }
-
-Write-Host "📚 Документация: README.md" -ForegroundColor Cyan
-Write-Host "🐛 Известные проблемы: README.md (раздел 'Что реализовано')" -ForegroundColor Cyan
+Write-Host "Документация: README.md" -ForegroundColor Cyan
+Write-Host "Известные проблемы: см. раздел 'Что реализовано' в README.md" -ForegroundColor Cyan
 Write-Host ""
