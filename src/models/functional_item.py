@@ -5,7 +5,7 @@
 Основана на реальной структуре из VoluptaS VRS.xlsx
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from src.db.base import Base
@@ -22,8 +22,6 @@ class FunctionalItem(Base):
     
     Представляет любой функциональный элемент системы:
     Module, Epic, Feature, Page, Service, Element, Story
-    
-    Содержит все поля из ТЗ + реальной таблицы VoluptaS VRS.xlsx
     """
     
     __tablename__ = "functional_items"
@@ -31,138 +29,72 @@ class FunctionalItem(Base):
     # === ПЕРВИЧНЫЙ КЛЮЧ ===
     id = Column(Integer, primary_key=True, autoincrement=True)
     
-    # === FUNCTIONAL ID (главный тег) ===
-    functional_id = Column(String(500), nullable=False, unique=True, index=True)
-    # Примеры: "front", "front.splash_page", "front.splash_page.cookies"
-    # Автогенерируется по структуре module.epic.feature
-    
-    # === ALIAS TAG (короткий уникальный алиас) ===
-    alias_tag = Column(String(200), unique=True, nullable=True, index=True)
-    # Примеры: "cookies", "Value_Popup", "Login_Page"
-    # Короткое название для удобного поиска
-    # Если пустой — используется последняя часть functional_id
-    
+    # === Func ID (главный тег) ===
+    func_id = Column(String(500), nullable=False, unique=True, index=True)
+
     # === ОСНОВНЫЕ ПОЛЯ ===
     title = Column(String(500), nullable=False)
-    # Примеры: "[Module]: FRONT", "[Epic]: Slash Page", "[Feature]: Age cookies"
-    
     type = Column(String(50), nullable=False, index=True)
-    # Enum: Module, Epic, Feature, Page, Service, Element, Story
-    
     description = Column(Text, nullable=True)
-    # Подробное описание функционала
-    
+    status = Column(String(50), nullable=False, default="New")
+
     # === ИЕРАРХИЯ ===
-    # Иерархическая связь (parent-child)
-    parent_id = Column(Integer, ForeignKey('functional_items.id'), nullable=True, index=True)
-    
-    # Старые поля для обратной совместимости
+    parent_id = Column(Integer, ForeignKey('functional_items.id'), nullable=True)
+    children = relationship("FunctionalItem", backref="parent", remote_side=[id])
+
     module = Column(String(200), nullable=True, index=True)
     epic = Column(String(200), nullable=True, index=True)
     feature = Column(String(200), nullable=True, index=True)
-    stories = Column(Text, nullable=True)  # JSON array или CSV строка
-    
-    # === СЕГМЕНТАЦИЯ ===
-    segment = Column(String(100), nullable=True, index=True)
-    # Enum: UI, UX/CX, API, Backend, Database, Integration, Security, Performance
-    
-    # === ТЕГИ И АЛИАСЫ ===
-    tags = Column(Text, nullable=True)  # JSON array
-    # Автоматические теги из структуры
-    
-    aliases = Column(Text, nullable=True)  # JSON array
-    # Ручные алиасы для поиска и интеграций
-    
-    # === ПРИОРИТЕЗАЦИЯ ===
-    is_crit = Column(Integer, default=0, index=True)  # 1 = критичный, 0 = нет
-    is_focus = Column(Integer, default=0, index=True)  # 1 = фокусный, 0 = нет
-    
-    # === ОТВЕТСТВЕННЫЕ (RACI) ===
-    # Foreign Keys к User
+
+    # === МЕТА-ДАННЫЕ ===
+    segment = Column(String(100), nullable=True)
+    alias_tag = Column(String(200), unique=True, nullable=True)
+    tags = Column(Text, nullable=True)
+
+    # === ФЛАГИ ===
+    is_crit = Column(Boolean, nullable=True)
+    is_focus = Column(Boolean, nullable=True)
+
+    # === ОТВЕТСТВЕННЫЕ ===
     responsible_qa_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     responsible_dev_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     accountable_id = Column(Integer, ForeignKey('users.id'), nullable=True)
-    
-    # Множественные роли (JSON array of user IDs)
-    consulted_ids = Column(Text, nullable=True)  # JSON array
-    informed_ids = Column(Text, nullable=True)  # JSON array
-    
-    # Relationships для ответственных
+    consulted_ids = Column(Text, nullable=True)
+    informed_ids = Column(Text, nullable=True)
+
+    # === ПОКРЫТИЕ ===
+    test_cases_linked = Column(Text, nullable=True)
+    automation_status = Column(String(50), nullable=True)
+    documentation_links = Column(Text, nullable=True)
+    maturity = Column(String(50), nullable=True)
+
+    # === ТЕХНИЧЕСКИЕ ДЕТАЛИ ===
+    container = Column(String(200), nullable=True)
+    database = Column(String(200), nullable=True)
+    subsystems_involved = Column(Text, nullable=True)
+    external_services = Column(Text, nullable=True)
+
+    # === МЕТА ===
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+    created_by = Column(String(200), nullable=True)
+    updated_by = Column(String(200), nullable=True)
+
+    # === ОТНОШЕНИЯ ===
     responsible_qa = relationship("User", foreign_keys=[responsible_qa_id])
     responsible_dev = relationship("User", foreign_keys=[responsible_dev_id])
     accountable = relationship("User", foreign_keys=[accountable_id])
-    
-    # Иерархические relationships
-    # Cascade на parent (one-to-many): при удалении parent удаляются children
-    parent = relationship(
-        "FunctionalItem",
-        remote_side=[id],
-        back_populates="children"
-    )
-    children = relationship(
-        "FunctionalItem",
-        back_populates="parent",
-        cascade="all, delete-orphan",
-        foreign_keys=[parent_id]
-    )
-    
-    # ПРИМЕЧАНИЕ: Связи теперь управляются через модель Relation
-    # related_items доступны через outgoing_relations и incoming_relations
-    
-    # === ПОКРЫТИЕ ТЕСТАМИ ===
-    test_cases_linked = Column(Text, nullable=True)  # JSON array или CSV
-    # Список связанных тест-кейсов
-    
-    automation_status = Column(String(50), nullable=True, index=True)
-    # Enum: Not Started, In Progress, Automated, Partially Automated, Not Applicable
-    
-    # === ДОКУМЕНТАЦИЯ ===
-    documentation_links = Column(Text, nullable=True)  # JSON array
-    # Ссылки на документацию, спеки, дизайны и т.д.
-    
-    # === ЗРЕЛОСТЬ И СТАТУС ===
-    maturity = Column(String(50), nullable=True, index=True)
-    # Enum: Draft, In Review, Approved, Deprecated
-    
-    status = Column(String(50), default="Approved", index=True)
-    # Статус элемента (по умолчанию Approved)
-    
-    # === ТЕХНИЧЕСКИЕ ДЕТАЛИ ===
-    container = Column(String(200), nullable=True)
-    # Контейнер/сервис, где реализован функционал
-    
-    database = Column(String(200), nullable=True)
-    # База данных, используемая функционалом
-    
-    subsystems_involved = Column(Text, nullable=True)  # JSON array
-    # Список задействованных подсистем
-    
-    external_services = Column(Text, nullable=True)  # JSON array
-    # Список внешних сервисов
-    
-    # === ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ ===
-    roles = Column(Text, nullable=True)
-    # Роли пользователей, для которых доступен функционал
-    
-    custom_fields = Column(Text, nullable=True)  # JSON object
-    # Кастомные поля (для будущего расширения)
-    
-    # === МЕТАДАННЫЕ ===
-    created_at = Column(DateTime, server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
-    created_by = Column(String(200), nullable=True)
-    updated_by = Column(String(200), nullable=True)
-    
+
     # === МЕТОДЫ ===
     
     def __repr__(self):
         """Строковое представление для отладки"""
-        return f"<FunctionalItem(id={self.id}, functional_id='{self.functional_id}', title='{self.title}')>"
-    
+        return f"<FunctionalItem(id={self.id}, func_id='{self.func_id}', title='{self.title}')>"
+
     def __str__(self):
         """Для отображения в UI"""
-        return f"{self.functional_id}: {self.title}"
-    
+        return f"{self.func_id}: {self.title}"
+
     def to_dict(self) -> Dict:
         """
         Преобразовать в словарь для экспорта/API
@@ -172,7 +104,7 @@ class FunctionalItem(Base):
         """
         return {
             "id": self.id,
-            "functional_id": self.functional_id,
+            "func_id": self.func_id,
             "alias_tag": self.alias_tag,
             "title": self.title,
             "type": self.type,

@@ -148,7 +148,7 @@ class GoogleSheetsImporter:
                 
                 # Ищем существующий элемент
                 item = self.session.query(FunctionalItem).filter(
-                    FunctionalItem.functional_id == func_id
+                    FunctionalItem.func_id == func_id
                 ).first()
                 
                 # Находим пользователей по имени
@@ -165,7 +165,7 @@ class GoogleSheetsImporter:
                 ).first() if row.get('Accountable') else None
                 
                 data = {
-                    'functional_id': func_id,
+                    'func_id': func_id,
                     'alias_tag': row.get('Alias', '') or None,
                     'title': row.get('Title', '') or None,
                     'type': row.get('Type', '') or None,

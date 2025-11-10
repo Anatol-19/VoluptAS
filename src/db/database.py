@@ -12,11 +12,16 @@ project_manager = ProjectManager(CONFIG_DIR)
 
 # Получаем путь к БД текущего проекта
 def get_database_url():
-    current_project = project_manager.get_current_project()
-    if not current_project:
-        raise RuntimeError('Не выбран активный проект!')
-    db_path = current_project.database_path
-    return f'sqlite:///{db_path}'
+    try:
+        current_project = project_manager.get_current_project()
+        if not current_project:
+            raise RuntimeError('Не выбран активный проект!')
+        db_path = current_project.database_path
+        print(f"🔍 Подключение к БД: {db_path}")
+        return f'sqlite:///{db_path}'
+    except Exception as e:
+        print(f"❌ Ошибка подключения к БД: {e}")
+        raise
 
 def get_engine():
     return create_engine(get_database_url(), echo=False, connect_args={'check_same_thread': False})
