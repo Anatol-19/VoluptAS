@@ -62,6 +62,19 @@ credentials/*.json
 credentials/*.env
 !data/credentials/README.md
 
+# Credentials (API keys, tokens, secrets)
+data/credentials/*
+!data/credentials/examples/*
+
+# Google API keys
+*.json
+!data/credentials/examples/google_credentials.json.example
+
+# Qase/Zoho env files
+*.env
+!data/credentials/examples/qase.env.example
+!data/credentials/examples/zoho.env.example
+
 # Temporary
 tmp/
 temp/
