@@ -1,5 +1,12 @@
 # VoluptAS Project Context for AI Assistants
 
+> **См. также:**
+> - [`AGENTS.md`](AGENTS.md) — универсальный AI-контракт (требования к планированию, verification, workflow)
+> - [`.ai/`](.ai/) — операционные модули AI (PLAN_MODE, VERIFICATION, WORKFLOW, MEMORY_BANK)
+> - [`CONTINUITY.md`](CONTINUITY.md) — долговременная память сессии
+
+---
+
 ## Project Overview
 VoluptAS - QA Management System with multi-project support, integrations (Zoho, Google Sheets, Qase.io), test planning, coverage tracking, and BDD feature generation.
 

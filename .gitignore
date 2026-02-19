@@ -75,3 +75,12 @@ htmlcov/
 # Documentation builds
 docs/_build/
 site/
+
+# AI Agent Framework (optional, can be committed)
+# .ai/                    # Раскомментировать, если .ai/ не должен быть в git
+# AGENTS.md               # Раскомментировать, если AGENTS.md не должен быть в git
+# CONTINUITY.md           # Раскомментировать, если CONTINUITY.md не должен быть в git
+
+# Verification scripts
+scripts/verify.bat
+scripts/verify.sh

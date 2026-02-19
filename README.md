@@ -412,9 +412,19 @@ ZOHO_REGION=com
 
 ```
 VoluptAS/
+├── README.md                     # ✅ Описание проекта (для людей)
+├── AGENTS.md                     # ✅ Контракт для AI-агента
+├── CONTINUITY.md                 # ✅ Журнал сессии (обновляется агентом)
 ├── main.py                       # ✅ Точка входа
 ├── requirements.txt              # ✅ Зависимости
 ├── .gitignore                    # ✅ Защита секретов
+│
+├── .ai/                          # ✅ Операционные модули AI
+│   ├── PLAN_MODE.md              # Правила планирования
+│   ├── VERIFICATION.md           # Конвейер проверки
+│   ├── WORKFLOW.md               # Полный цикл разработки
+│   ├── MEMORY_BANK.md            # Конвенции проекта
+│   └── settings.json             # Security-профиль
 │
 ├── src/
 │   ├── models/                   # ✅ SQLAlchemy модели
