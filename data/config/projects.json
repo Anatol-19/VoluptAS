@@ -1,0 +1,18 @@
+{
+  "default": {
+    "id": "default",
+    "name": "Default",
+    "description": "Проект из папки default",
+    "database_path": "C:\\ITS_QA\\VoluptAS\\data\\projects\\default\\project.db",
+    "bdd_features_dir": "C:\\ITS_QA\\VoluptAS\\data\\projects\\default\\bdd_features",
+    "reports_dir": "C:\\ITS_QA\\VoluptAS\\data\\projects\\default\\reports",
+    "settings_profile": "production",
+    "created_at": "2026-02-19T22:11:37.721917",
+    "last_used": "2026-02-19T22:11:37.721953",
+    "is_active": true,
+    "tags": [
+      "restored"
+    ],
+    "custom_fields": {}
+  }
+}
