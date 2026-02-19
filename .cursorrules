@@ -1,9 +1,13 @@
 # VoluptAS Project Context for AI Assistants
 
 > **См. также:**
-> - [`AGENTS.md`](AGENTS.md) — универсальный AI-контракт (требования к планированию, verification, workflow)
-> - [`.ai/`](.ai/) — операционные модули AI (PLAN_MODE, VERIFICATION, WORKFLOW, MEMORY_BANK)
-> - [`CONTINUITY.md`](CONTINUITY.md) — долговременная память сессии
+> - [`.ai/AGENTS.md`](.ai/AGENTS.md) — универсальный AI-контракт
+> - [`.ai/CONTINUITY.md`](.ai/CONTINUITY.md) — долговременная память сессии
+> - [`.ai/PLAN_MODE.md`](.ai/PLAN_MODE.md) — правила планирования
+> - [`.ai/VERIFICATION.md`](.ai/VERIFICATION.md) — конвейер проверки
+> - [`.ai/WORKFLOW.md`](.ai/WORKFLOW.md) — полный цикл разработки
+> - [`.ai/MEMORY_BANK.md`](.ai/MEMORY_BANK.md) — конвенции проекта
+> - [`.ai/settings.json`](.ai/settings.json) — Security-профиль
 
 ---
 
