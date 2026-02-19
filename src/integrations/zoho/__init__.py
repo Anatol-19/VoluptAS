@@ -22,7 +22,7 @@ from .portal_data import (
     defect_status_manager,
     create_user_manager,
     create_task_status_manager,
-    create_defect_status_manager
+    create_defect_status_manager,
 )
 
 __all__ = [
@@ -38,5 +38,5 @@ __all__ = [
     "defect_status_manager",
     "create_user_manager",
     "create_task_status_manager",
-    "create_defect_status_manager"
+    "create_defect_status_manager",
 ]

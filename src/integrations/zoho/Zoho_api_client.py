@@ -16,36 +16,37 @@ from dotenv import load_dotenv
 
 class ZohoAPI:
     """
-        Класс для взаимодействия с API Zoho.
+    Класс для взаимодействия с API Zoho.
 
-        Атрибуты:
-            client_id (str): Идентификатор клиента.
-            client_secret (str): Секрет клиента.
-            refresh_token (str): Токен обновления.
-            access_token (str): Токен доступа.
-            project_id (str): Идентификатор проекта.
-            portal_name (str): Название портала.
-            session (requests.Session): Сессия для повторного использования соединений.
-            base_url (str): Базовый URL для API запросов.
-        """
-
+    Атрибуты:
+        client_id (str): Идентификатор клиента.
+        client_secret (str): Секрет клиента.
+        refresh_token (str): Токен обновления.
+        access_token (str): Токен доступа.
+        project_id (str): Идентификатор проекта.
+        portal_name (str): Название портала.
+        session (requests.Session): Сессия для повторного использования соединений.
+        base_url (str): Базовый URL для API запросов.
+    """
 
     def __init__(self):
         # Ищем config сначала в credentials, потом в текущей директории
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "..")
+        )
         env_path = os.path.join(project_root, "credentials", "zoho.env")
-        
+
         if not os.path.exists(env_path):
             # Fallback на старое расположение
             env_path = os.path.join(os.path.dirname(__file__), "config_zoho.env")
-        
+
         if not os.path.exists(env_path):
             raise FileNotFoundError(
                 f"Файл конфигурации Zoho не найден. Ожидается:\n"
                 f"  - {os.path.join(project_root, 'credentials', 'zoho.env')}\n"
                 f"  - или {os.path.join(os.path.dirname(__file__), 'config_zoho.env')}"
             )
-        
+
         load_dotenv(env_path)  # Загружаем переменные из zoho.env
 
         self.client_id = os.getenv("ZOHO_CLIENT_ID")
@@ -57,10 +58,11 @@ class ZohoAPI:
         self.redirect_uri = os.getenv("ZOHO_REDIRECT_URI")
         self.portal_name = os.getenv("ZOHO_PORTAL_NAME")
 
-        self.session = requests.Session()  # Используем сессию для повторного использования соединений
+        self.session = (
+            requests.Session()
+        )  # Используем сессию для повторного использования соединений
         self.base_url = self.get_base_url()
         self.check_and_refresh_tokens()
-
 
     def get_base_url(self) -> str:
         """
@@ -73,11 +75,10 @@ class ZohoAPI:
             "com": "projectsapi.zoho.com",
             "eu": "projectsapi.zoho.eu",
             "in": "projectsapi.zoho.in",
-            "cn": "projectsapi.zoho.com.cn"
+            "cn": "projectsapi.zoho.com.cn",
         }
         region = os.getenv("ZOHO_REGION", "com")  # По умолчанию .com
         return f"https://{domains.get(region, domains['com'])}/restapi/portal/{self.portal_name}"
-
 
     def check_and_refresh_tokens(self) -> None:
         """
@@ -93,7 +94,6 @@ class ZohoAPI:
             self.access_token = self.do_access_token()
             self.save_tokens(self.access_token, self.refresh_token)
 
-
     def check_access_token(self) -> bool:
         """
         Проверяет, действует ли текущий access_token.
@@ -103,7 +103,6 @@ class ZohoAPI:
         headers = {"Authorization": f"Zoho-oauthtoken {self.access_token}"}
         response = self.session.get(url, headers=headers)
         return response.status_code == 200
-
 
     def request_token(self, grant_type: str, additional_params: dict = None) -> dict:
         """
@@ -129,7 +128,6 @@ class ZohoAPI:
             print(f"❌ Ошибка при запросе токена: {e}")
             raise
 
-
     def do_access_token(self) -> str:
         """
         Обновляет и получает access_token через refresh_token.
@@ -140,7 +138,7 @@ class ZohoAPI:
 
         response_data = self.request_token(
             grant_type="refresh_token",
-            additional_params={"refresh_token": self.refresh_token}
+            additional_params={"refresh_token": self.refresh_token},
         )
         new_access_token = response_data.get("access_token")
         if not new_access_token:
@@ -163,7 +161,7 @@ class ZohoAPI:
             additional_params={
                 "code": self.authorization_code,
                 "redirect_uri": self.redirect_uri,
-            }
+            },
         )
         new_refresh_token = response_data.get("refresh_token")
         if not new_refresh_token:
@@ -172,7 +170,6 @@ class ZohoAPI:
         print("✅ Новый refresh_token успешно получен.")
         return new_refresh_token
 
-
     @staticmethod
     def save_tokens(access_token: str, refresh_token: str) -> None:
         """
@@ -180,13 +177,15 @@ class ZohoAPI:
         :param access_token: Новый токен доступа.
         :param refresh_token: Новый токен обновления.
         """
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "..")
+        )
         env_path = os.path.join(project_root, "credentials", "zoho.env")
-        
+
         if not os.path.exists(env_path):
             # Fallback на старое расположение
             env_path = os.path.join(os.path.dirname(__file__), "config_zoho.env")
-        
+
         try:
             with open(env_path, "r", encoding="utf-8") as file:
                 lines = file.readlines()
@@ -202,7 +201,6 @@ class ZohoAPI:
             print(f"✅ Токены сохранены в: {env_path}")
         except Exception as e:
             print(f"❌ Ошибка сохранения токенов: {e}")
-
 
     def send_request(self, url: str, params: dict = None) -> dict | None:
         """
@@ -246,7 +244,6 @@ class ZohoAPI:
             print(f"❌ Ошибка запроса: {response.status_code}, {response.text}")
             return None
 
-
     def get_portals(self) -> dict | None:
         """
         Получает список порталов.
@@ -268,17 +265,18 @@ class ZohoAPI:
             return []
         return response.get("projects", [])
 
-
-    def get_entities_by_filter(self, entity_type: str,
-                               created_after: str = None,
-                               created_before: str = None,
-                               closed_after: str = None,
-                               closed_before: str = None,
-                               owner_id: str = None,
-                               tags: list[str] = None,
-                               milestone_id: str = None,
-                               tasklist_id: str = None
-                               ) -> list[dict]:
+    def get_entities_by_filter(
+        self,
+        entity_type: str,
+        created_after: str = None,
+        created_before: str = None,
+        closed_after: str = None,
+        closed_before: str = None,
+        owner_id: str = None,
+        tags: list[str] = None,
+        milestone_id: str = None,
+        tasklist_id: str = None,
+    ) -> list[dict]:
         """
         Получает сущности (задачи или баги) по фильтру.
          :param entity_type: Тип сущности ('tasks', 'bugs', 'milestones', 'tasklists').
@@ -293,7 +291,9 @@ class ZohoAPI:
         :return list[dict]: Список сущностей, соответствующих фильтру.
         """
         if entity_type not in ["tasks", "bugs", "milestones", "tasklists"]:
-            raise ValueError("Тип сущности должен быть 'tasks', 'bugs', 'milestones' или 'tasklists'.")
+            raise ValueError(
+                "Тип сущности должен быть 'tasks', 'bugs', 'milestones' или 'tasklists'."
+            )
 
         url = f"{self.base_url}/projects/{self.project_id}/{entity_type}/"
         params = {}
@@ -314,13 +314,14 @@ class ZohoAPI:
         if tasklist_id:
             params["tasklist_id"] = tasklist_id
 
-        print(f"🔍 Отправка запроса: URL={url}, Параметры={params}")  # Логирование запроса
+        print(
+            f"🔍 Отправка запроса: URL={url}, Параметры={params}"
+        )  # Логирование запроса
         response = self.send_request(url, params=params)
         if response is None:
             print(f"❌ Не удалось получить {entity_type}. Проверьте права доступа.")
             return []
         return response.get(entity_type, [])
-
 
     def get_users(self, search_term: str = None) -> list[dict]:
         """
@@ -332,13 +333,12 @@ class ZohoAPI:
         params = {}
         if search_term:
             params["search"] = search_term
-        
+
         response = self.send_request(url, params)
         if response is None:
             print(f"❌ Не удалось получить пользователей. Проверьте права доступа.")
             return []
         return response.get("users", [])
-
 
     def get_tasks_by_milestone(self, milestone_id: str) -> list[dict]:
         """
@@ -346,13 +346,11 @@ class ZohoAPI:
         """
         return self.get_entities_by_filter("tasks", milestone_id=milestone_id)
 
-
     def get_tasks_by_tasklist(self, tasklist_id: str) -> list[dict]:
         """
         Получает задачи, связанные с таск-листом.
         """
         return self.get_entities_by_filter("tasks", tasklist_id=tasklist_id)
-
 
     def get_tasks_by_title(self, title: str) -> list[dict]:
         """
@@ -372,7 +370,6 @@ class ZohoAPI:
         # Если ничего не найдено, возвращаем пустой список
         return []
 
-
     def get_tasklist_id_by_name(self, tasklist_name: str) -> str | None:
         """
         Получает ID таск-листа по его названию.
@@ -382,7 +379,6 @@ class ZohoAPI:
             if tasklist["name"].lower() == tasklist_name.lower():
                 return tasklist["id"]
         return None
-
 
     def get_milestone_id_by_name(self, milestone_name: str) -> str | None:
         """
@@ -394,7 +390,6 @@ class ZohoAPI:
                 return milestone["id"]
         return None
 
-
     def get_tasks_in_date_range(self, start_date: str, end_date: str) -> list[dict]:
         """
         Получает задачи, созданные в указанном диапазоне дат.
@@ -402,8 +397,9 @@ class ZohoAPI:
         :param end_date: Конечная дата (YYYY-MM-DD).
         :return: Список задач.
         """
-        return self.get_entities_by_filter("tasks", created_after=start_date, created_before=end_date)
-
+        return self.get_entities_by_filter(
+            "tasks", created_after=start_date, created_before=end_date
+        )
 
     def get_blueprint_graph(self) -> dict | None:
         """
@@ -413,7 +409,6 @@ class ZohoAPI:
         url = f"{self.base_url}/automation/blueprint/{self.project_id}/graph"
         return self.send_request(url)
 
-
     def get_bug_statuses(self) -> list[dict]:
         """
         Получает статусы багов в проекте.
@@ -421,7 +416,6 @@ class ZohoAPI:
         """
         url = f"{self.base_url}/projects/{self.project_id}/bugs/defaultfields/"
         return self.send_request(url).get("defaultfields", {}).get("status_details", [])
-
 
     def get_project_tags(self) -> list[dict]:
         """
@@ -432,8 +426,9 @@ class ZohoAPI:
         response = self.send_request(url)
         return response.get("tags", [])
 
-
-    def manage_tag(self, tag_id: str, entity_id: str, entity_type: int, action: str) -> bool:
+    def manage_tag(
+        self, tag_id: str, entity_id: str, entity_type: int, action: str
+    ) -> bool:
         """
         Ассоциирует или диссоциирует тег с сущностью.
 
@@ -451,8 +446,13 @@ class ZohoAPI:
         response = self.send_request(url, params=data)
         return response is not None
 
-
-    def create_bug(self, title: str, description: str, assignee_id: str = None, priority: str = None) -> dict | None:
+    def create_bug(
+        self,
+        title: str,
+        description: str,
+        assignee_id: str = None,
+        priority: str = None,
+    ) -> dict | None:
         """
         Создаёт баг в проекте.
         :param title: Название бага.

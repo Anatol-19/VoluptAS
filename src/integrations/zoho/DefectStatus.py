@@ -1,7 +1,14 @@
 class DefectStatus:
     """Класс, представляющий статус дефекта."""
 
-    def __init__(self, sequence: int, status_id: str, status_name: str, is_default: bool, is_closed: bool):
+    def __init__(
+        self,
+        sequence: int,
+        status_id: str,
+        status_name: str,
+        is_default: bool,
+        is_closed: bool,
+    ):
         """
         Инициализирует экземпляр DefectStatus.
 
@@ -30,7 +37,9 @@ class DefectStatusManager:
     def __init__(self):
         self.statuses = {}
 
-    def add_status(self, status_id: str, status_name: str, is_default_value: bool, sequence: int) -> None:
+    def add_status(
+        self, status_id: str, status_name: str, is_default_value: bool, sequence: int
+    ) -> None:
         """
         Добавляет новый статус в коллекцию.
 
@@ -45,7 +54,7 @@ class DefectStatusManager:
             status_id=status_id,
             status_name=status_name,
             is_default=is_default_value,
-            is_closed=False  # По умолчанию закрытым не считаем
+            is_closed=False,  # По умолчанию закрытым не считаем
         )
 
     def get_status_by_id(self, status_id: str) -> DefectStatus | None:
@@ -84,8 +93,8 @@ class DefectStatusManager:
         """
         for status in statuses_data:
             self.add_status(
-                status_id=status['status_id'],
-                status_name=status.get('status_name', ''),
-                is_default_value=status.get('is_default_value', False),
-                sequence=status.get('sequence', 0)
+                status_id=status["status_id"],
+                status_name=status.get("status_name", ""),
+                is_default_value=status.get("is_default_value", False),
+                sequence=status.get("sequence", 0),
             )

@@ -1,7 +1,15 @@
 class TaskStatus:
     """Класс, представляющий статус задачи."""
 
-    def __init__(self, status_id: str, status_name: str, is_default_value: bool, sequence: int, status_color_hexcode: str, is_closed: bool):
+    def __init__(
+        self,
+        status_id: str,
+        status_name: str,
+        is_default_value: bool,
+        sequence: int,
+        status_color_hexcode: str,
+        is_closed: bool,
+    ):
         """
         Инициализирует экземпляр TaskStatus.
 
@@ -28,10 +36,19 @@ class TaskStatusManager:
     Атрибуты:
         statuses (dict[str, TaskStatus]): Словарь статусов, где ключ - идентификатор статуса, значение - экземпляр TaskStatus.
     """
+
     def __init__(self):
         self.statuses = {}
 
-    def add_status(self, status_id: str, status_name: str, is_default_value: bool, sequence: int, status_color_hexcode: str, is_closed: bool) -> None:
+    def add_status(
+        self,
+        status_id: str,
+        status_name: str,
+        is_default_value: bool,
+        sequence: int,
+        status_color_hexcode: str,
+        is_closed: bool,
+    ) -> None:
         """
         Добавляет новый статус в коллекцию.
 
@@ -43,7 +60,14 @@ class TaskStatusManager:
             status_color_hexcode (str): Цвет статуса в шестнадцатеричном формате.
             is_closed (bool): Является ли статус закрытым.
         """
-        self.statuses[status_id] = TaskStatus(status_id, status_name, is_default_value, sequence, status_color_hexcode, is_closed)
+        self.statuses[status_id] = TaskStatus(
+            status_id,
+            status_name,
+            is_default_value,
+            sequence,
+            status_color_hexcode,
+            is_closed,
+        )
 
     def get_status_by_id(self, status_id: str) -> TaskStatus | None:
         """
@@ -81,10 +105,10 @@ class TaskStatusManager:
         """
         for status in statuses_data:
             self.add_status(
-                status_id=status['status_id'],
-                status_name=status.get('status_name', ''),
-                is_default_value=status.get('is_default_value', False),
-                sequence=status.get('sequence', 0),
-                status_color_hexcode=status.get('status_color_hexcode', ''),
-                is_closed=status.get('is_closed', False)
+                status_id=status["status_id"],
+                status_name=status.get("status_name", ""),
+                is_default_value=status.get("is_default_value", False),
+                sequence=status.get("sequence", 0),
+                status_color_hexcode=status.get("status_color_hexcode", ""),
+                is_closed=status.get("is_closed", False),
             )

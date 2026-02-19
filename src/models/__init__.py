@@ -5,5 +5,12 @@ from .relation import Relation, RELATION_TYPES
 from .zoho_task import ZohoTask
 from .report_template import ReportTemplate
 
-__all__ = ['FunctionalItem', 'User', 'Dictionary', 'Relation', 'ZohoTask', 'ReportTemplate', 'RELATION_TYPES']
-
+__all__ = [
+    "FunctionalItem",
+    "User",
+    "Dictionary",
+    "Relation",
+    "ZohoTask",
+    "ReportTemplate",
+    "RELATION_TYPES",
+]

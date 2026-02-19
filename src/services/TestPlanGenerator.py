@@ -23,7 +23,6 @@ class TestPlanGenerator:
     Класс для генерации тест-плана релиза.
     """
 
-
     def __init__(self, users_mngr, task_status_mngr, defect_status_mngr):
         """
         Инициализирует TestPlanGenerator с менеджерами пользователей, статусов задач и дефектов.
@@ -59,6 +58,7 @@ class TestPlanGenerator:
         Выводит JSON-объект в консоль в читаемом формате.
         """
         print(json.dumps(data, indent=4, ensure_ascii=False))
+
     ##################################################
 
     def initialize_tasks_and_milestones(self, titles):
@@ -77,7 +77,6 @@ class TestPlanGenerator:
                 milestone_id = task.get("milestone_id")
                 if milestone_id and milestone_id not in self.milestones_in_sprint:
                     self.milestones_in_sprint.append(milestone_id)
-
 
     @staticmethod
     def load_template() -> str:
@@ -118,7 +117,6 @@ class TestPlanGenerator:
 {{regression_report}}
 """
 
-
     @staticmethod
     def generate_tasks_table(tasks: list[dict]) -> str:
         """
@@ -128,13 +126,20 @@ class TestPlanGenerator:
         header += "| --------------------- | ------------------- | --------- | --- | ---- | -------- |\n"
 
         def format_owners(t_owners: list[dict], role: str) -> str:
-            return ", ".join(
-                owner["full_name"] for owner in t_owners if owner.get("role") == role
-            ) or "Не назначен"
+            return (
+                ", ".join(
+                    owner["full_name"]
+                    for owner in t_owners
+                    if owner.get("role") == role
+                )
+                or "Не назначен"
+            )
 
         tasks_table = ""
         for task in tasks:
-            milestone_or_tasklist = f"{task.get('milestone_name', 'Не указан')} / {task.get('tasklist')}"
+            milestone_or_tasklist = (
+                f"{task.get('milestone_name', 'Не указан')} / {task.get('tasklist')}"
+            )
             owners = task.get("details", {}).get("owners", [])
             qa_list = format_owners(owners, "QA")
             dev_list = format_owners(owners, "Dev")
@@ -144,7 +149,6 @@ class TestPlanGenerator:
                 f"{qa_list} | {dev_list} | {task['status']['name']} |\n"
             )
         return header + tasks_table
-
 
     def generate_testing_schedule(self) -> str:
         """
@@ -166,7 +170,6 @@ class TestPlanGenerator:
             f"| Регресс релизной ветки на [STAGE] | {stage_date.strftime('%d%m%y')} | QA1, QA2 | 🔴 Не начато |\n"
             f"| Регресс на [PROD] | {prod_date.strftime('%d%m%y')} | QA3 | 🟢 Готово |\n"
         )
-
 
     def generate_focus_list(self) -> str:
         """
@@ -192,7 +195,7 @@ class TestPlanGenerator:
         tasks = self.api.get_entities_by_filter(
             entity_type="tasks",
             created_after=self.start_date,
-            created_before=self.end_date
+            created_before=self.end_date,
         )
 
         affected_functionality = set()
@@ -203,7 +206,10 @@ class TestPlanGenerator:
                     tag = tag.get("name", "")
                 if tag in functionality_map:
                     affected_functionality.add(functionality_map[tag])
-        return "\n".join(f"- {func}" for func in sorted(affected_functionality)) or "Нет данных"
+        return (
+            "\n".join(f"- {func}" for func in sorted(affected_functionality))
+            or "Нет данных"
+        )
 
     def generate_defects_table(self, defects: list[dict]) -> str:
         """
@@ -213,9 +219,12 @@ class TestPlanGenerator:
         header += "| --------------------- | --------- | ----------- | --- | ---- | -------- |\n"
 
         def format_owners(d_owners: list[dict], role: str) -> str:
-            return ", ".join(
-                owner["name_ru"] for owner in d_owners if owner.get("role") == role
-            ) or "Не назначен"
+            return (
+                ", ".join(
+                    owner["name_ru"] for owner in d_owners if owner.get("role") == role
+                )
+                or "Не назначен"
+            )
 
         defects_table = ""
         for defect in defects:
@@ -231,7 +240,6 @@ class TestPlanGenerator:
             )
         return header + defects_table
 
-
     def generate_regression_report(self) -> str:
         """
         Формирует отчёт о регрессе.
@@ -243,12 +251,12 @@ class TestPlanGenerator:
         defects = self.api.get_entities_by_filter(
             entity_type="bugs",
             created_after=self.start_date,
-            created_before=self.end_date
+            created_before=self.end_date,
         )
         closed_defects = self.api.get_entities_by_filter(
             entity_type="bugs",
             closed_after=self.start_date,
-            closed_before=self.end_date
+            closed_before=self.end_date,
         )
 
         # Генерируем таблицу дефектов
@@ -260,20 +268,22 @@ class TestPlanGenerator:
             f"{self.generate_defects_table(closed_defects) or 'Нет данных'}\n"
         )
 
-
-    def generate_plan_for_tasks(self, tasks: list[dict], output_file="test_plan.md") -> None:
+    def generate_plan_for_tasks(
+        self, tasks: list[dict], output_file="test_plan.md"
+    ) -> None:
         """
         Генерирует тест-план и сохраняет его в файл.
         """
         tasks_table = self.generate_tasks_table(tasks)
         testing_schedule = self.generate_testing_schedule()
         focus_list = self.generate_focus_list()
-        affected_functionality = self.generate_affected_functionality(functionality_map={})
+        affected_functionality = self.generate_affected_functionality(
+            functionality_map={}
+        )
         regression_report = self.generate_regression_report()
 
         plan = (
-            self.template
-            .replace("{{tasks_table}}", tasks_table)
+            self.template.replace("{{tasks_table}}", tasks_table)
             .replace("{{testing_schedule}}", testing_schedule)
             .replace("{{focus_list}}", focus_list)
             .replace("{{affected_functionality}}", affected_functionality)

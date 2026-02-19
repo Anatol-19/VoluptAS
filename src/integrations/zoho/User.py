@@ -24,6 +24,7 @@ class UserManager:
     Атрибуты:
         users (dict[int, User]): Словарь пользователей, где ключ - идентификатор пользователя, значение - экземпляр User.
     """
+
     def __init__(self):
         self.users = {}
 
@@ -75,8 +76,8 @@ class UserManager:
         """
         for user in users_data:
             self.add_user(
-                user_id=user['id'],
-                user_name=user['name'],
-                role=user['role'],
-                email=user['email']
+                user_id=user["id"],
+                user_name=user["name"],
+                role=user["role"],
+                email=user["email"],
             )

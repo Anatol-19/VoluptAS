@@ -32,7 +32,7 @@ class GoogleSheetsClient:
         credentials_path: str,
         spreadsheet_id: str,
         worksheet_name: str,
-        clear_on_open: bool = True  # Очищать лист при открытии (для экспорта)
+        clear_on_open: bool = True,  # Очищать лист при открытии (для экспорта)
     ):
         self.credentials_path = credentials_path
         self.spreadsheet_id = spreadsheet_id
@@ -47,8 +47,7 @@ class GoogleSheetsClient:
     def _authorize(self):
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
         credentials = Credentials.from_service_account_file(
-            self.credentials_path,
-            scopes=scopes
+            self.credentials_path, scopes=scopes
         )
         return gspread.authorize(credentials)
 
@@ -66,7 +65,9 @@ class GoogleSheetsClient:
             print(f"[INFO] Лист '{sheet_name}' не найден. Создаём новый.")
             return self.spreadsheet.add_worksheet(title=sheet_name, rows=100, cols=30)
 
-    def append_result(self, data: Dict[str, Any], raw_formula_fields: Optional[List[str]] = None):
+    def append_result(
+        self, data: Dict[str, Any], raw_formula_fields: Optional[List[str]] = None
+    ):
         """
         Добавляет строку (в память) для последующей batch-записи.
         Автоматически дополняет заголовки, если появляются новые ключи.
@@ -90,7 +91,9 @@ class GoogleSheetsClient:
             return
 
         try:
-            print(f"[INFO] Запись {len(self._batch_rows)} строк в таблицу '{self.worksheet_name}'...")
+            print(
+                f"[INFO] Запись {len(self._batch_rows)} строк в таблицу '{self.worksheet_name}'..."
+            )
             self.sheet.append_rows(self._batch_rows, value_input_option="USER_ENTERED")
             self._batch_rows.clear()
         except Exception as e:
@@ -109,8 +112,9 @@ class GoogleSheetsClient:
             print(f"[ERROR] Ошибка при добавлении строки в '{sheet_name}': {e}")
             raise
 
-
-    def ensure_sheet_exists(self, sheet_name: str, source: Literal["cli", "api", "crux"]):
+    def ensure_sheet_exists(
+        self, sheet_name: str, source: Literal["cli", "api", "crux"]
+    ):
         """
         Проверяет наличие листа. Если отсутствует — клонирует из шаблона по типу источника.
         :param sheet_name: Имя создаваемого листа.
@@ -123,13 +127,21 @@ class GoogleSheetsClient:
                 # TODO: Добавить конфигурацию шаблонов для VoluptAS
                 # from src.config import TEMPLATE_SHEETS
                 # Временно используем хардкод для совместимости
-                TEMPLATE_SHEETS = {"cli": "_CLI_Template", "api": "_API_Template", "crux": "_CRUX_Template"}
+                TEMPLATE_SHEETS = {
+                    "cli": "_CLI_Template",
+                    "api": "_API_Template",
+                    "crux": "_CRUX_Template",
+                }
                 template_name = TEMPLATE_SHEETS.get(source.lower())
                 if not template_name:
                     raise ValueError(f"Неизвестный шаблон для source={source}")
-                print(f"[INFO] Создаём лист '{sheet_name}' из шаблона '{template_name}'...")
+                print(
+                    f"[INFO] Создаём лист '{sheet_name}' из шаблона '{template_name}'..."
+                )
                 template_sheet = spreadsheet.worksheet(template_name)
-                spreadsheet.duplicate_sheet(template_sheet.id, new_sheet_name=sheet_name)
+                spreadsheet.duplicate_sheet(
+                    template_sheet.id, new_sheet_name=sheet_name
+                )
             else:
                 print(f"[DEBUG] Лист '{sheet_name}' уже существует.")
         except Exception as e:
@@ -140,7 +152,7 @@ class GoogleSheetsClient:
         """
         Получает текущие заголовки из таблицы. Если заголовки отсутствуют — создаёт их на основе переданных данных.
         Также добавляет новые столбцы, если в data появились новые ключи.
-        
+
         Использует кэш для избежания повторных вставок.
 
         :param data: Словарь, где ключ — имя столбца, значение — значение ячейки.
@@ -149,12 +161,14 @@ class GoogleSheetsClient:
         # Если заголовки уже вставлены — используем кэш
         if self._headers_inserted:
             # Проверяем на новые поля
-            missing_headers = [key for key in data.keys() if key not in self._current_headers]
+            missing_headers = [
+                key for key in data.keys() if key not in self._current_headers
+            ]
             if missing_headers:
                 self._current_headers.extend(missing_headers)
-                self.sheet.update('1:1', [self._current_headers])
+                self.sheet.update("1:1", [self._current_headers])
             return self._current_headers
-        
+
         # Первая вставка заголовков
         headers = list(data.keys())
         self.sheet.insert_row(headers, index=1)
