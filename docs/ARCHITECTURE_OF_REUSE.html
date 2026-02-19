@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoluptAS — Architecture of Reuse</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght @400;700;800&family=IBM+Plex+Mono:wght @400;500;600&display=swap');
+
+  :root {
+    --bg: #f5f2eb;
+    --ink: #1a1612;
+    --ink2: #3d3830;
+    --ink3: #8a8070;
+    --rule: #d4cfc4;
+    --a1: #d4380d;  /* red — VoluptAS core */
+    --a2: #0050b3;  /* blue — selfhosted */
+    --a3: #389e0d;  /* green — external SaaS */
+    --a4: #7c3aed;  /* purple — custom built */
+    --a5: #c27d10;  /* amber — open question */
+    --paper: #fffdf8;
+    --stamp: rgba(212,56,13,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    padding: 48px 40px;
+  }
+
+  /* ---- HEADER ---- */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 16px;
+    margin-bottom: 40px;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    color: var(--ink);
+  }
+  h1 span { color: var(--a1); }
+  .meta { color: var(--ink3); font-size: 10px; letter-spacing: 2px; text-align: right; line-height: 1.8; }
+
+  /* ---- LEGEND ---- */
+  .legend-bar {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+    padding: 12px 16px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+  }
+  .leg { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink2); }
+  .leg-sq { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* ---- MAIN GRID ---- */
+  .arch {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0;
+  }
+
+  /* ---- LAYER LABELS ---- */
+  .layer-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--rule);
+    padding: 20px 16px;
+    background: var(--paper);
+    position: relative;
+  }
+  .layer-label::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 0; bottom: 0;
+    width: 3px;
+  }
+
+  .ll-voluptas { border-right-color: var(--a1); }
+  .ll-voluptas::after { background: var(--a1); }
+
+  .ll-selfhosted { border-right-color: var(--a2); }
+  .ll-selfhosted::after { background: var(--a2); }
+
+  .ll-saas { border-right-color: var(--a3); }
+  .ll-saas::after { background: var(--a3); }
+
+  .ll-open { border-right-color: var(--a5); }
+  .ll-open::after { background: var(--a5); }
+
+  /* ---- LAYER CONTENT ---- */
+  .layer-content {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* ---- CARDS GRID ---- */
+  .cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .card {
+    border: 1.5px solid var(--rule);
+    background: var(--paper);
+    padding: 14px 16px;
+    flex: 1;
+    min-width: 180px;
+    position: relative;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .card-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .card-badge {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    white-space: nowrap;
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
+
+  .badge-core    { background: var(--stamp); color: var(--a1); border: 1px solid rgba(212,56,13,0.25); }
+  .badge-self    { background: rgba(0,80,179,0.07); color: var(--a2); border: 1px solid rgba(0,80,179,0.2); }
+  .badge-saas    { background: rgba(56,158,13,0.07); color: var(--a3); border: 1px solid rgba(56,158,13,0.2); }
+  .badge-build   { background: rgba(124,58,237,0.07); color: var(--a4); border: 1px solid rgba(124,58,237,0.2); }
+  .badge-open    { background: rgba(194,125,16,0.07); color: var(--a5); border: 1px solid rgba(194,125,16,0.2); }
+
+  .card-role {
+    font-size: 10px;
+    color: var(--ink3);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .card-owns { font-size: 10px; color: var(--ink2); }
+  .card-owns strong { color: var(--ink); }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .tag {
+    font-size: 9px;
+    padding: 2px 6px;
+    border: 1px solid var(--rule);
+    color: var(--ink3);
+    background: var(--bg);
+  }
+
+  /* ---- DECISION CARDS ---- */
+  .decision-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .decision {
+    border: 1.5px solid var(--a5);
+    background: rgba(194,125,16,0.04);
+    padding: 14px;
+  }
+
+  .decision-q {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--a5);
+    margin-bottom: 8px;
+  }
+
+  .decision-opts { font-size: 10px; color: var(--ink2); line-height: 1.6; }
+  .opt-a { color: var(--a2); font-weight: 600; }
+  .opt-b { color: var(--a3); font-weight: 600; }
+  .opt-c { color: var(--a4); font-weight: 600; }
+
+  /* ---- FLOW DIAGRAM ---- */
+  .flow-wrap {
+    margin-top: 36px;
+    padding: 24px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+  }
+
+  .flow-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .flow-diagram {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .flow-node {
+    flex-shrink: 0;
+    padding: 12px 16px;
+    min-width: 130px;
+    text-align: center;
+    border: 1.5px solid var(--rule);
+    background: var(--bg);
+    position: relative;
+  }
+
+  .flow-node.core { background: var(--stamp); border-color: var(--a1); }
+  .flow-node.self { background: rgba(0,80,179,0.06); border-color: var(--a2); }
+  .flow-node.saas { background: rgba(56,158,13,0.06); border-color: var(--a3); }
+  .flow-node.open { background: rgba(194,125,16,0.06); border-color: var(--a5); }
+
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    color: var(--ink3);
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .fn-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink); }
+  .fn-sub  { font-size: 9px; color: var(--ink3); margin-top: 4px; }
+  .fn-type { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; }
+
+  /* ---- OWNERSHIP TABLE ---- */
+  .own-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 36px;
+    font-size: 11px;
+  }
+  .own-table th {
+    font-family: 'Syne', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink3);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--ink);
+    background: var(--paper);
+  }
+  .own-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  .own-table tr:hover td { background: var(--bg); }
+  .own-table .func { font-weight: 600; color: var(--ink); }
+  .own-table .owner-v { color: var(--a1); font-weight: 600; }
+  .own-table .owner-s { color: var(--a2); font-weight: 600; }
+  .own-table .owner-e { color: var(--a3); font-weight: 600; }
+  .own-table .owner-b { color: var(--a4); font-weight: 600; }
+  .own-table .owner-q { color: var(--a5); font-weight: 600; }
+  .own-table .note-cell { color: var(--ink3); font-size: 10px; }
+
+  /* ---- AI NOTES ---- */
+  .ai-strip {
+    margin-top: 40px;
+    border-top: 3px solid var(--ink);
+    padding-top: 24px;
+  }
+  .ai-strip-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--a1);
+    margin-bottom: 16px;
+  }
+  .ai-notes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--rule);
+  }
+  .ai-note {
+    background: var(--paper);
+    padding: 16px;
+  }
+  .ai-note-tag {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 6px;
+  }
+  .ai-note-text { font-size: 11px; color: var(--ink2); line-height: 1.65; }
+  .ai-note-text code {
+    background: var(--bg);
+    color: var(--a1);
+    padding: 1px 4px;
+    font-size: 10px;
+  }
+  .ai-note-text .hi-blue { color: var(--a2); font-weight: 600; }
+  .ai-note-text .hi-green { color: var(--a3); font-weight: 600; }
+  .ai-note-text .hi-purple { color: var(--a4); font-weight: 600; }
+  .ai-note-text .hi-amber { color: var(--a5); font-weight: 600; }
+
+  .section-rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 32px 0;
+  }
+
+  .h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .warning-box {
+    border: 1.5px solid var(--a5);
+    background: rgba(194,125,16,0.05);
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .warning-icon { font-size: 18px; flex-shrink: 0; margin-top: -2px; }
+  .warning-text { font-size: 11px; color: var(--ink2); line-height: 1.6; }
+  .warning-text strong { color: var(--a5); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<div class="masthead">
+  <div>
+    <h1>Volup<span>t</span>AS</h1>
+    <div style="font-size: 11px; color: var(--ink3); margin-top: 4px; letter-spacing: 1px;">Architecture of Reuse — что строим сами, что берём готовым</div>
+  </div>
+  <div class="meta">
+    v0.4+ · 2026-02-19<br>
+    QA Functional Management<br>
+    DRAFT / FOR DISCUSSION
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend-bar">
+  <div class="leg"><div class="leg-sq" style="background:rgba(212,56,13,0.15);border:1.5px solid var(--a1);"></div>VoluptAS Core — строим сами</div>
+  <div class="leg"><div class="leg-sq" style="background:rgba(0,80,179,0.1);border:1.5px solid var(--a2);"></div>Self-hosted — поднимаем готовый сервис</div>
+  <div class="leg"><div class="leg-sq" style="background:rgba(56,158,13,0.1);border:1.5px solid var(--a3);"></div>SaaS — интегрируемся через API</div>
+  <div class="leg"><div class="leg-sq" style="background:rgba(124,58,237,0.1);border:1.5px solid var(--a4);"></div>Thin adapter — минимальный клей</div>
+  <div class="leg"><div class="leg-sq" style="background:rgba(194,125,16,0.1);border:1.5px solid var(--a5);"></div>Open question — нужно решить</div>
+</div>
+
+<!-- ============ LAYER GRID ============ -->
+<div class="arch">
+
+  <!-- LAYER 1: VoluptAS Core -->
+  <div class="layer-label ll-voluptas" style="grid-row: span 1;">VoluptAS Core</div>
+  <div class="layer-content">
+    <div class="cards">
+      <div class="card" style="border-color: var(--a1);">
+        <div class="card-top">
+          <div class="card-name">Orchestrator<br>& FuncID Engine</div>
+          <span class="card-badge badge-core">СТРОИМ</span>
+        </div>
+        <div class="card-role">Единственное что точно пишем сами — логика FuncID, GAP-движок, связи между сервисами</div>
+        <div class="card-owns"><strong>Владеет:</strong> FunctionalItem модель, Relation graph, GAP rules, FuncID генерация, проекты</div>
+        <div class="tag-row">
+          <span class="tag">SQLite / PostgreSQL</span>
+          <span class="tag">Python</span>
+          <span class="tag">SQLAlchemy</span>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: var(--a1);">
+        <div class="card-top">
+          <div class="card-name">Desktop UI Shell</div>
+          <span class="card-badge badge-core">СТРОИМ</span>
+        </div>
+        <div class="card-role">Главное окно: дерево слева + таблица справа. Склейка всех сервисов в один UX</div>
+        <div class="card-owns"><strong>Владеет:</strong> панель дерева, таблица с GAP, редактор элемента, навигация по проектам</div>
+        <div class="tag-row">
+          <span class="tag">PyQt6</span>
+          <span class="tag">embedded WebView?</span>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: var(--a1);">
+        <div class="card-top">
+          <div class="card-name">Report Engine</div>
+          <span class="card-badge badge-core">СТРОИМ</span>
+        </div>
+        <div class="card-role">Шаблонная генерация MD/PDF отчётов. Крит-лист, GAP, Sprint report</div>
+        <div class="card-owns"><strong>Владеет:</strong> шаблоны, рендер, экспорт в файл/буфер/Google Sheets</div>
+        <div class="tag-row">
+          <span class="tag">Jinja2</span>
+          <span class="tag">WeasyPrint/md</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAYER 2: Self-hosted candidates -->
+  <div class="layer-label ll-selfhosted">Self-Hosted (рассматриваем)</div>
+  <div class="layer-content">
+    <div class="cards">
+
+      <div class="card" style="border-color: var(--a2);">
+        <div class="card-top">
+          <div class="card-name">TMS-ядро?<br><span style="font-weight:400;font-size:11px;">Kiwi TCMS / TestLink</span></div>
+          <span class="card-badge badge-self">SELFHOST</span>
+        </div>
+        <div class="card-role">Вопрос: можно ли переиспользовать готовую TMS как хранилище тест-кейсов вместо Qase?</div>
+        <div class="card-owns">
+          <strong>Даёт:</strong> хранение ТК, версионирование, прогоны, дефекты<br>
+          <strong>Минус:</strong> нет нашего FuncID-маппинга из коробки
+        </div>
+        <div class="tag-row">
+          <span class="tag">Kiwi TCMS</span>
+          <span class="tag">TestLink</span>
+          <span class="tag">Allure TestOps</span>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: var(--a2);">
+        <div class="card-top">
+          <div class="card-name">Graph / Mindmap<br><span style="font-weight:400;font-size:11px;">визуализация</span></div>
+          <span class="card-badge badge-self">SELFHOST / LIB</span>
+        </div>
+        <div class="card-role">XMind ≠ граф связей. Нужно разделить: дерево-навигатор (XMind-подобный) и граф зависимостей (N:M)</div>
+        <div class="card-owns">
+          <strong>Вариант A:</strong> встроенная библиотека в PyQt6<br>
+          <strong>Вариант B:</strong> embedded Mermaid / D3.js в WebView<br>
+          <strong>Вариант C:</strong> интеграция с Obsidian Canvas API
+        </div>
+        <div class="tag-row">
+          <span class="tag">NetworkX</span>
+          <span class="tag">D3.js</span>
+          <span class="tag">Cytoscape.js</span>
+          <span class="tag">Mermaid</span>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: var(--a2);">
+        <div class="card-top">
+          <div class="card-name">История изменений<br><span style="font-weight:400;font-size:11px;">Audit Log</span></div>
+          <span class="card-badge badge-self">SELFHOST</span>
+        </div>
+        <div class="card-role">Не писать свой audit log. Использовать готовое решение или PostgreSQL temporal tables</div>
+        <div class="card-owns">
+          <strong>Вариант A:</strong> SQLite event log table (просто, всегда рядом)<br>
+          <strong>Вариант B:</strong> Loki / OpenObserve (overkill для MVP)<br>
+          <strong>Вариант C:</strong> Git-based (каждое сохранение = коммит JSON)
+        </div>
+        <div class="tag-row">
+          <span class="tag">event_log table</span>
+          <span class="tag">git-backend</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LAYER 3: SaaS integrations -->
+  <div class="layer-label ll-saas">SaaS — отдаём бэкам</div>
+  <div class="layer-content">
+    <div class="cards">
+
+      <div class="card" style="border-color: var(--a3);">
+        <div class="card-top">
+          <div class="card-name">Qase.io</div>
+          <span class="card-badge badge-saas">SAAS API</span>
+        </div>
+        <div class="card-role">Хранение тест-кейсов, прогоны, дефекты из ТК</div>
+        <div class="card-owns">
+          <strong>Что отдаём:</strong> FuncID как кастомное поле в Qase<br>
+          <strong>Что забираем:</strong> список ТК по FuncID, результаты прогонов → GAP
+        </div>
+        <div class="tag-row"><span class="tag">REST API</span><span class="tag">webhooks</span></div>
+      </div>
+
+      <div class="card" style="border-color: var(--a3);">
+        <div class="card-top">
+          <div class="card-name">Zoho Projects</div>
+          <span class="card-badge badge-saas">SAAS API</span>
+        </div>
+        <div class="card-role">Таски, баги, спринты, бэклог — живут в Zoho</div>
+        <div class="card-owns">
+          <strong>Что отдаём:</strong> FuncID тег на задачу, ответственный из VoluptAS<br>
+          <strong>Что забираем:</strong> список задач спринта, статусы, дефекты → отчёт
+        </div>
+        <div class="tag-row"><span class="tag">OAuth 2.0</span><span class="tag">REST API</span></div>
+      </div>
+
+      <div class="card" style="border-color: var(--a3);">
+        <div class="card-top">
+          <div class="card-name">Docmost<br><span style="font-weight:400;font-size:11px;">(self-hosted wiki)</span></div>
+          <span class="card-badge badge-self">SELFHOST</span>
+        </div>
+        <div class="card-role">Документация — не в VoluptAS. Docmost хранит страницы, VoluptAS хранит ссылки</div>
+        <div class="card-owns">
+          <strong>Что отдаём:</strong> FuncID как тег страницы в Docmost<br>
+          <strong>Что забираем:</strong> URL страницы → поле docs_links в FunctionalItem<br>
+          <strong>Бонус:</strong> может стать заменой Confluence
+        </div>
+        <div class="tag-row"><span class="tag">self-hosted</span><span class="tag">API</span><span class="tag">FuncID tag</span></div>
+      </div>
+
+      <div class="card" style="border-color: var(--a3);">
+        <div class="card-top">
+          <div class="card-name">Google Sheets</div>
+          <span class="card-badge badge-saas">SAAS API</span>
+        </div>
+        <div class="card-role">Readonly-витрина для команды. Не QA — не редактирует</div>
+        <div class="card-owns">
+          <strong>Что отдаём:</strong> экспорт всего функционала по вкладкам<br>
+          <strong>Формат:</strong> All / Crit / GAP / RACI / по модулям
+        </div>
+        <div class="tag-row"><span class="tag">Sheets API v4</span><span class="tag">OAuth</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LAYER 4: Open questions -->
+  <div class="layer-label ll-open">Открытые вопросы</div>
+  <div class="layer-content">
+    <div class="decision-grid">
+
+      <div class="decision">
+        <div class="decision-q">⚠ ТЗ / требования — где хранить?</div>
+        <div class="decision-opts">
+          <span class="opt-a">A. Docmost</span> — страница с тегом FuncID, VoluptAS хранит ссылку<br><br>
+          <span class="opt-b">B. Notion / Confluence</span> — внешний сервис, интеграция через URL<br><br>
+          <span class="opt-c">C. Внутри VoluptAS</span> — поле description расширяется до rich text<br><br>
+          <strong style="color:var(--ink3);">Рекомендация: A (Docmost), FuncID как тег везде</strong>
+        </div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">⚠ TMS для ядра — нужен ли selfhost?</div>
+        <div class="decision-opts">
+          <span class="opt-a">A. Kiwi TCMS</span> — полный selfhost, заменяет Qase, но нет мобайла<br><br>
+          <span class="opt-b">B. Qase.io</span> — SaaS, удобный UI, хорошее API, платный<br><br>
+          <span class="opt-c">C. Allure TestOps</span> — selfhost, интеграция с BDD/автотестами из коробки<br><br>
+          <strong style="color:var(--ink3);">Рекомендация: B сейчас, C при появлении BDD</strong>
+        </div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">⚠ Граф — библиотека или embedded?</div>
+        <div class="decision-opts">
+          <span class="opt-a">A. PyQt6 + NetworkX</span> — нативно, без WebView, ограниченный UX<br><br>
+          <span class="opt-b">B. WebView + Cytoscape.js</span> — богатый граф, web стек внутри desktop<br><br>
+          <span class="opt-c">C. Mermaid diagrams</span> — простой рендер, но статичный, без drag&drop<br><br>
+          <strong style="color:var(--ink3);">Рекомендация: B — Cytoscape.js через WebView</strong>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ FLOW: как данные движутся ============ -->
+<div class="flow-wrap" style="margin-top: 36px;">
+  <div class="flow-title">// Поток данных — как FuncID связывает всё</div>
+  <div class="flow-diagram">
+
+    <div class="flow-node core">
+      <div class="fn-name">VoluptAS</div>
+      <div class="fn-sub">создаёт FuncID</div>
+      <div class="fn-type" style="color:var(--a1);">CORE</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node self">
+      <div class="fn-name">Docmost</div>
+      <div class="fn-sub">страница с тегом FuncID</div>
+      <div class="fn-type" style="color:var(--a2);">DOCS</div>
+    </div>
+    <div class="flow-arrow">↔</div>
+    <div class="flow-node saas">
+      <div class="fn-name">Qase.io</div>
+      <div class="fn-sub">ТК с полем FuncID</div>
+      <div class="fn-type" style="color:var(--a3);">TEST CASES</div>
+    </div>
+    <div class="flow-arrow">↔</div>
+    <div class="flow-node saas">
+      <div class="fn-name">Zoho</div>
+      <div class="fn-sub">таска/баг с тегом FuncID</div>
+      <div class="fn-type" style="color:var(--a3);">TASKS</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node core">
+      <div class="fn-name">VoluptAS</div>
+      <div class="fn-sub">собирает GAP, строит отчёт</div>
+      <div class="fn-type" style="color:var(--a1);">REPORT</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="background:rgba(56,158,13,0.06);border-color:var(--a3);">
+      <div class="fn-name">G.Sheets / MD</div>
+      <div class="fn-sub">команда видит результат</div>
+      <div class="fn-type" style="color:var(--a3);">OUTPUT</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ OWNERSHIP TABLE ============ -->
+<hr class="section-rule">
+<div class="h2">Таблица владения функциями</div>
+
+<div class="warning-box">
+  <div class="warning-icon">⚠</div>
+  <div class="warning-text"><strong>Принцип:</strong> VoluptAS не хранит то, что лучше хранит специализированный сервис. Тест-кейсы → Qase/Kiwi. Документы → Docmost. Задачи → Zoho. VoluptAS хранит только <strong>карту функционала</strong> и <strong>связи между всем остальным</strong>.</div>
+</div>
+
+<table class="own-table">
+  <thead>
+    <tr>
+      <th>Функция / данные</th>
+      <th>Кто владеет</th>
+      <th>Что хранит VoluptAS</th>
+      <th>Комментарий</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="func">FunctionalItem (карта)</td>
+      <td><span class="owner-v">VoluptAS Core</span></td>
+      <td>Полностью</td>
+      <td class="note-cell">Это единственная уникальная вещь в системе</td>
+    </tr>
+    <tr>
+      <td class="func">FuncID (уникальный тег)</td>
+      <td><span class="owner-v">VoluptAS Core</span></td>
+      <td>Генерирует и выдаёт</td>
+      <td class="note-cell">Используется во всех внешних системах как маркер</td>
+    </tr>
+    <tr>
+      <td class="func">GAP-статусы</td>
+      <td><span class="owner-v">VoluptAS Core</span></td>
+      <td>Вычисляет на лету + gap_override</td>
+      <td class="note-cell">Computed, не хранится. Только ручная поправка в БД</td>
+    </tr>
+    <tr>
+      <td class="func">Связи (иерархия + кросс)</td>
+      <td><span class="owner-v">VoluptAS Core</span></td>
+      <td>Relation table (from, to, type)</td>
+      <td class="note-cell">N:M граф. Иерархия — частный тип связи</td>
+    </tr>
+    <tr>
+      <td class="func">Тест-кейсы</td>
+      <td><span class="owner-e">Qase.io / Kiwi TCMS</span></td>
+      <td>Только ID ссылки + статус покрытия</td>
+      <td class="note-cell">VoluptAS не хранит тело ТК, только маппинг FuncID↔TestID</td>
+    </tr>
+    <tr>
+      <td class="func">Прогоны / результаты тестов</td>
+      <td><span class="owner-e">Qase.io / Kiwi / Allure</span></td>
+      <td>Результат прогона → обновляет GAP</td>
+      <td class="note-cell">Webhook или polling по расписанию</td>
+    </tr>
+    <tr>
+      <td class="func">Задачи и баги</td>
+      <td><span class="owner-e">Zoho Projects</span></td>
+      <td>Ссылку на задачу + статус (кеш)</td>
+      <td class="note-cell">VoluptAS обогащает задачи FuncID, забирает статусы</td>
+    </tr>
+    <tr>
+      <td class="func">Спринты / бэклог</td>
+      <td><span class="owner-e">Zoho Projects</span></td>
+      <td>Список спринта для отчёта (временно)</td>
+      <td class="note-cell">Данные приходят при синхронизации, не хранятся долго</td>
+    </tr>
+    <tr>
+      <td class="func">Документация / ТЗ</td>
+      <td><span class="owner-s">Docmost (selfhost)</span></td>
+      <td>URL страницы в docs_links[]</td>
+      <td class="note-cell">Docmost тегирует страницы FuncID → двусторонний поиск</td>
+    </tr>
+    <tr>
+      <td class="func">История изменений</td>
+      <td><span class="owner-s">Event log (SQLite)</span></td>
+      <td>event_log table: who, what, when, diff</td>
+      <td class="note-cell">Простой append-only лог. Не полный audit trail для старта</td>
+    </tr>
+    <tr>
+      <td class="func">Граф / визуализация</td>
+      <td><span class="owner-b">Cytoscape.js (embedded)</span></td>
+      <td>Данные из Relation table</td>
+      <td class="note-cell">WebView внутри PyQt6 рендерит граф на основе данных VoluptAS</td>
+    </tr>
+    <tr>
+      <td class="func">Дерево-навигатор (левая панель)</td>
+      <td><span class="owner-v">VoluptAS UI</span></td>
+      <td>Строится из Relation parent-of</td>
+      <td class="note-cell">Не отдельная модель — вьюшка поверх графа связей</td>
+    </tr>
+    <tr>
+      <td class="func">Отчёты (MD/PDF)</td>
+      <td><span class="owner-v">VoluptAS Report Engine</span></td>
+      <td>Шаблоны + рендер</td>
+      <td class="note-cell">Jinja2 → MD или WeasyPrint → PDF</td>
+    </tr>
+    <tr>
+      <td class="func">Google Sheets (команда)</td>
+      <td><span class="owner-e">Google SaaS</span></td>
+      <td>Readonly push при экспорте</td>
+      <td class="note-cell">Не источник данных — только витрина</td>
+    </tr>
+    <tr style="background: rgba(194,125,16,0.04);">
+      <td class="func">ТЗ / требования</td>
+      <td><span class="owner-q">? Открытый вопрос</span></td>
+      <td>URL в docs_links[]</td>
+      <td class="note-cell">Docmost или Notion или Confluence — решить до v0.5</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============ AI NOTES ============ -->
+<div class="ai-strip">
+  <div class="ai-strip-title">// Комментарии для AI разработки</div>
+  <div class="ai-notes">
+
+    <div class="ai-note">
+      <div class="ai-note-tag">Принцип интеграции</div>
+      <div class="ai-note-text">VoluptAS — <strong>оркестратор</strong>, не монолит. Каждый внешний сервис владеет своими данными. VoluptAS хранит только <code>FuncID</code> + ссылки + статусы-кеши. При интеграции с новым сервисом: VoluptAS передаёт FuncID туда, забирает обратно статус/ссылку.</div>
+    </div>
+
+    <div class="ai-note">
+      <div class="ai-note-tag">Adapter pattern</div>
+      <div class="ai-note-text">Каждая интеграция — отдельный <code>Adapter</code> класс: <code>QaseAdapter</code>, <code>ZohoAdapter</code>, <code>DocmostAdapter</code>, <code>GoogleSheetsAdapter</code>. Интерфейс: <code>push(func_id, data)</code> и <code>pull(func_id) → status</code>. Это позволяет заменить Qase на Kiwi TCMS без изменения ядра.</div>
+    </div>
+
+    <div class="ai-note">
+      <div class="ai-note-tag">Graph: Cytoscape.js</div>
+      <div class="ai-note-text">Граф рендерится в <span class="hi-blue">QWebEngineView (PyQt6)</span> через Cytoscape.js. Данные передаются как JSON из Python. Клик по вершине → Python callback через <code>QWebChannel</code>. Drag&drop в графе → обновляет Relation в БД. Дерево и граф — одни данные, разный рендер.</div>
+    </div>
+
+    <div class="ai-note">
+      <div class="ai-note-tag">Docmost как TЗ-хаб</div>
+      <div class="ai-note-text"><span class="hi-green">Docmost</span> — open-source selfhosted wiki. API позволяет создавать страницы с тегами. Флоу: QA создаёт FuncID в VoluptAS → создаёт страницу в Docmost с тегом FuncID → VoluptAS при синхронизации подтягивает URL → сохраняет в <code>docs_links[]</code>. Двусторонний поиск по тегу.</div>
+    </div>
+
+    <div class="ai-note">
+      <div class="ai-note-tag">Kiwi vs Qase</div>
+      <div class="ai-note-text"><span class="hi-blue">Kiwi TCMS</span> — selfhost Python, хорошее API, бесплатно. Минус: нет мобайла, UI устаревший. <span class="hi-green">Qase.io</span> — SaaS, удобный, платный от 10$/мес. Решение: <code>TmsAdapter</code> как интерфейс, две реализации — <code>QaseAdapter</code> и <code>KiwiAdapter</code>. Переключается в конфиге.</div>
+    </div>
+
+    <div class="ai-note">
+      <div class="ai-note-tag">История изменений (старт)</div>
+      <div class="ai-note-text">Не усложнять. Простая таблица <code>event_log</code> в SQLite: <code>id, timestamp, user, entity_id, action, old_json, new_json</code>. SQLAlchemy event listener перехватывает <code>after_update</code>/<code>after_insert</code>/<code>after_delete</code>. Этого достаточно для MVP. Loki/Grafana — только если понадобится аналитика.</div>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top: 24px; display:flex; justify-content:space-between; font-size:10px; color:var(--ink3); padding-top:16px; border-top: 1px solid var(--rule);">
+  <span>VoluptAS Architecture of Reuse · DRAFT · 2026-02-19</span>
+  <span>QA Functional Management Platform</span>
+</div>
+
+</body>
+</html>
