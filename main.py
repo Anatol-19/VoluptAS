@@ -1305,16 +1305,16 @@ class MainWindow(QMainWindow):
             'FuncID', 'Alias', 'Title', 'Type', 'Module', 'Epic', 'Feature', 'QA', 'Dev', 'Segment', 'Crit', 'Focus', 'Actions'
         ])
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        # Разрешаем inline-редактирование по double-click
-        self.table.setEditTriggers(QTableWidget.EditTrigger.DoubleClicked)
+        # Inline-редактирование по double-click для определённых колонок
+        self.table.setEditTriggers(QTableWidget.EditTrigger.DoubleClicked | QTableWidget.EditTrigger.EditKeyPressed)
         self.table.itemChanged.connect(self.on_item_changed)
         self.table.itemSelectionChanged.connect(self.on_selection_changed)
-        
+
         # Контекстное меню для таблицы
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.show_context_menu)
-        
-        # Двойной клик на строке открывает карточку редактирования
+
+        # Двойной клик на Actions колонке (12) открывает карточку редактирования
         self.table.doubleClicked.connect(self.on_table_double_click)
         content_layout.addWidget(self.table, stretch=7)
         
@@ -1796,31 +1796,95 @@ class MainWindow(QMainWindow):
         row = self.table.rowAt(position.y())
         if row < 0:
             return
-        
+
         menu = QMenu(self)
+
+        # Создание дочернего элемента
+        create_child_menu = menu.addMenu('➕ Создать дочерний')
         
+        # Определяем тип текущего элемента и предлагаем подходящие дочерние
+        type_cell = self.table.item(row, 3)  # Type column
+        current_type = type_cell.text() if type_cell else ''
+        
+        child_types = {
+            'Module': ['Epic'],
+            'Epic': ['Feature'],
+            'Feature': ['Story', 'Page', 'Element'],
+            'Story': ['Element'],
+            'Page': ['Element'],
+            'Service': [],
+            'Element': [],
+        }
+        
+        for child_type in child_types.get(current_type, []):
+            action = QAction(f'{child_type}', self)
+            action.triggered.connect(lambda checked, t=child_type: self.create_child_item(row, t))
+            create_child_menu.addAction(action)
+        
+        if not child_types.get(current_type, []):
+            no_action = QAction('Нет дочерних типов', self)
+            no_action.setEnabled(False)
+            create_child_menu.addAction(no_action)
+        
+        menu.addSeparator()
+
         edit_action = QAction('✏️ Редактировать', self)
         edit_action.triggered.connect(lambda: self.edit_item_by_row(row))
         menu.addAction(edit_action)
-        
+
         duplicate_action = QAction('📋 Дублировать', self)
         duplicate_action.triggered.connect(lambda: self.duplicate_item_by_row(row))
         menu.addAction(duplicate_action)
-        
+
         menu.addSeparator()
-        
+
         delete_action = QAction('🗑️ Удалить', self)
         delete_action.triggered.connect(lambda: self.delete_item_by_row(row))
         menu.addAction(delete_action)
-        
+
         menu.exec(self.table.viewport().mapToGlobal(position))
     
-    def on_table_double_click(self, index):
-        """Обработка двойного клика - открыть карточку редактирования"""
-        # Не открываем карточку при клике на колонку Actions
-        if index.column() == 12:  # Actions column
+    def create_child_item(self, parent_row, child_type):
+        """Создание дочернего элемента"""
+        parent_funcid = self.table.item(parent_row, 0).text()
+        parent_item = self.session.query(FunctionalItem).filter_by(functional_id=parent_funcid).first()
+        
+        if not parent_item:
             return
         
+        # Создаём новый элемент с родителем
+        new_item = FunctionalItem()
+        
+        # Устанавливаем иерархию
+        if parent_item.type == 'Module':
+            new_item.module = parent_item.title
+        elif parent_item.type == 'Epic':
+            new_item.module = parent_item.module
+            new_item.epic = parent_item.title
+        elif parent_item.type == 'Feature':
+            new_item.module = parent_item.module
+            new_item.epic = parent_item.epic
+            new_item.feature = parent_item.title
+        
+        # Открываем редактор
+        dialog = DynamicEditDialog(new_item, self.session, self)
+        if dialog.exec():
+            try:
+                self.session.add(new_item)
+                self.session.commit()
+                self.load_data()
+                self.statusBar().showMessage(f'✅ Создан {child_type}: {new_item.functional_id}')
+            except Exception as e:
+                self.session.rollback()
+                QMessageBox.critical(self, 'Ошибка', f'Не удалось создать:\n{e}')
+    
+    def on_table_double_click(self, index):
+        """Обработка двойного клика — открыть карточку редактирования"""
+        # Открываем карточку ТОЛЬКО при клике на Actions колонку (12)
+        # Для остальных колонок работает inline редактирование
+        if index.column() != 12:  # Не Actions column
+            return  # Inline editing обработает
+
         row = index.row()
         self.edit_item_by_row(row)
     
