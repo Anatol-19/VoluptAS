@@ -371,5 +371,10 @@ class ProjectManager:
         """
         Сохраняет проекты в projects.json
         """
-        with open(self.config_file, 'w', encoding='utf-8') as f:
-            json.dump({pid: proj.to_dict() for pid, proj in self.projects.items()}, f, ensure_ascii=False, indent=2)
+        with open(self.config_file, "w", encoding="utf-8") as f:
+            json.dump(
+                {pid: proj.to_dict() for pid, proj in self.projects.items()},
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )

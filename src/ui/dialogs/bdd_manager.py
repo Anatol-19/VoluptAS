@@ -1,20 +1,34 @@
 """
 BDD Feature Manager - каталог для управления всеми feature файлами
-"""
-
-from PyQt6.QtWidgets import *
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QAction
-from pathlib import Path
 
 Диалог для управления BDD Feature файлами
 """
 
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QPushButton,
-    QLabel, QListWidget, QMessageBox,
-    QTextEdit
+    QMainWindow,
+    QDialog,
+    QVBoxLayout,
+    QPushButton,
+    QLabel,
+    QListWidget,
+    QMessageBox,
+    QTextEdit,
+    QToolBar,
+    QLineEdit,
+    QComboBox,
+    QCheckBox,
+    QSplitter,
+    QTableWidget,
+    QAbstractItemView,
+    QWidget,
+    QHBoxLayout,
+    QFileDialog,
+    QTableWidgetItem,
 )
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QAction
+from pathlib import Path
+from src.models import FunctionalItem
 from src.config import Config
 from src.bdd.feature_generator import FeatureGenerator
 

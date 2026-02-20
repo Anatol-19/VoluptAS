@@ -28,18 +28,22 @@ class InfraMaturityView(QWidget):
 
         # Фильтр по уровням
         self.level_filter = QComboBox()
-        self.level_filter.addItems([
-            "Все уровни",
-            "L1 - Basic",
-            "L2 - Controlled",
-            "L3 - Efficient",
-            "L4 - Optimized"
-        ])
+        self.level_filter.addItems(
+            [
+                "Все уровни",
+                "L1 - Basic",
+                "L2 - Controlled",
+                "L3 - Efficient",
+                "L4 - Optimized",
+            ]
+        )
         layout.addWidget(self.level_filter)
 
         # Таблица зрелости
         self.table = QTableView()
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         layout.addWidget(self.table)

@@ -32,7 +32,9 @@ class TableView(QTableView):
         """Инициализация интерфейса"""
         # Настройка заголовков
         self.setModel(self.model)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
         self.horizontalHeader().setStretchLastSection(True)
 
         # Настройка выделения
@@ -50,7 +52,18 @@ class TableView(QTableView):
         self.model.clear()
 
         # Заголовки
-        headers = ["ID", "Func ID", "Название", "Тип", "Статус", "QA", "Dev", "Module", "Epic", "Feature"]
+        headers = [
+            "ID",
+            "Func ID",
+            "Название",
+            "Тип",
+            "Статус",
+            "QA",
+            "Dev",
+            "Module",
+            "Epic",
+            "Feature",
+        ]
         self.model.setHorizontalHeaderLabels(headers)
 
         # Загрузка данных
@@ -64,10 +77,12 @@ class TableView(QTableView):
                 QStandardItem(item.type),
                 QStandardItem(item.status),
                 QStandardItem(item.responsible_qa.name if item.responsible_qa else ""),
-                QStandardItem(item.responsible_dev.name if item.responsible_dev else ""),
+                QStandardItem(
+                    item.responsible_dev.name if item.responsible_dev else ""
+                ),
                 QStandardItem(item.module or ""),
                 QStandardItem(item.epic or ""),
-                QStandardItem(item.feature or "")
+                QStandardItem(item.feature or ""),
             ]
             self.model.appendRow(row)
 

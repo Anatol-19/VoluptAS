@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QToolBar,
     QPushButton,
     QMessageBox,
+    QDialog,
 )
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction, QIcon
@@ -27,7 +28,7 @@ from src.ui.dialogs.zoho_sync_dialog import ZohoSyncDialog
 from src.ui.dialogs.entity_editor import EntityEditorDialog  # Добавлен импорт
 from src.ui.dialogs.import_dialogs import ImportFromCsvDialog
 from src.ui.dialogs.export_dialogs import ExportToCsvDialog
-from src.ui.dialogs.project_dialogs import ProjectManagerDialog
+from src.ui.dialogs.project_dialogs import ProjectSelectorDialog as ProjectManagerDialog
 from src.ui.dialogs.bdd_manager import BDDManagerDialog
 
 
@@ -193,6 +194,7 @@ class MainWindow(QMainWindow):
     def open_report_generator(self):
         """Открытие генератора отчетов"""
         from src.db import SessionLocal
+
         dlg = ReportGeneratorDialog(SessionLocal(), self)
         dlg.exec()
 
@@ -200,11 +202,13 @@ class MainWindow(QMainWindow):
     def open_project_manager(self):
         """Открытие менеджера проектов"""
         dlg = ProjectManagerDialog(self)
-        if dlg.exec() == QDialog.DialogCode.Accepted:  # Проект был переключен
+        if dlg.exec() == QDialog.Accepted:  # Проект был переключен
             # Перезагружаем компоненты с новым проектом
             self.main_tabs.refresh_all()
             self.statusBar().showMessage(f"Текущий проект: {Config.CURRENT_PROJECT}")
-            self.setWindowTitle(f"{self.config.WINDOW_TITLE} - {Config.CURRENT_PROJECT}")
+            self.setWindowTitle(
+                f"{self.config.WINDOW_TITLE} - {Config.CURRENT_PROJECT}"
+            )
 
     def open_entity_editor(self):
         """Открытие редактора сущностей"""

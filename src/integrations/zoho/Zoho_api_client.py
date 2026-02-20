@@ -12,6 +12,7 @@
 import requests
 import os
 from dotenv import load_dotenv
+from src.config import Config
 
 
 class ZohoAPI:
@@ -41,7 +42,7 @@ class ZohoAPI:
             env_path = os.path.join(os.path.dirname(__file__), "config_zoho.env")
 
         if not os.path.exists(env_path):
-            example_path = Config.get_credentials_example_path('zoho.env.example')
+            example_path = Config.get_credentials_example_path("zoho.env.example")
             raise FileNotFoundError(
                 f"Файл конфигурации Zoho не найден: {env_path}\n"
                 f"Создайте файл на основе примера: {example_path}"
@@ -210,8 +211,17 @@ class ZohoAPI:
         :return dict | None: Ответ API в формате JSON или None в случае ошибки.
         """
         import logging
-        log_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "logs", "voluptas.log"))
-        logging.basicConfig(filename=log_path, level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+
+        log_path = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__), "..", "..", "..", "logs", "voluptas.log"
+            )
+        )
+        logging.basicConfig(
+            filename=log_path,
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s %(message)s",
+        )
         try:
             headers = {"Authorization": f"Zoho-oauthtoken {self.access_token}"}
             response = self.session.get(url, headers=headers, params=params)
@@ -231,20 +241,35 @@ class ZohoAPI:
                 print(f"❌ Ошибка доступа: {response.status_code}, {error_text}")
                 logging.error(f"Zoho 403 Forbidden: {error_text}")
                 # Диагностика скопов
-                env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "credentials", "zoho.env"))
+                env_path = os.path.abspath(
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        "..",
+                        "..",
+                        "..",
+                        "credentials",
+                        "zoho.env",
+                    )
+                )
                 print(f"Используемый файл скопов: {env_path}")
                 try:
                     with open(env_path, "r", encoding="utf-8") as f:
                         env_lines = f.readlines()
-                    scopes = [line for line in env_lines if "SCOPE" in line or "scope" in line]
+                    scopes = [
+                        line for line in env_lines if "SCOPE" in line or "scope" in line
+                    ]
                     print("Скопы в zoho.env:")
                     for s in scopes:
                         print(f"  {s.strip()}")
                 except Exception as e:
                     print(f"Не удалось прочитать zoho.env: {e}")
                 print("Рекомендуемые скопы для импорта проектов:")
-                print("  ZohoProjects.projects.READ, ZohoProjects.tasks.READ, ZohoProjects.tasklists.READ, ZohoProjects.bugs.READ, ZohoProjects.users.READ, ZohoProjects.milestones.READ, ZohoProjects.forums.READ")
-                logging.error("Рекомендуемые скопы: ZohoProjects.projects.READ, ZohoProjects.tasks.READ, ZohoProjects.tasklists.READ, ZohoProjects.bugs.READ, ZohoProjects.users.READ, ZohoProjects.milestones.READ, ZohoProjects.forums.READ")
+                print(
+                    "  ZohoProjects.projects.READ, ZohoProjects.tasks.READ, ZohoProjects.tasklists.READ, ZohoProjects.bugs.READ, ZohoProjects.users.READ, ZohoProjects.milestones.READ, ZohoProjects.forums.READ"
+                )
+                logging.error(
+                    "Рекомендуемые скопы: ZohoProjects.projects.READ, ZohoProjects.tasks.READ, ZohoProjects.tasklists.READ, ZohoProjects.bugs.READ, ZohoProjects.users.READ, ZohoProjects.milestones.READ, ZohoProjects.forums.READ"
+                )
                 return None
 
             return self.handle_response(response)
@@ -282,10 +307,18 @@ class ZohoAPI:
         url = f"{self.base_url}/projects/"
         response = self.send_request(url)
         if response is None:
-            print("❌ Не удалось получить список проектов. Проверьте права доступа и скопы.")
-            print("Рекомендуемые скопы: ZohoProjects.projects.READ, ZohoProjects.tasks.READ, ZohoProjects.tasklists.READ, ZohoProjects.bugs.READ, ZohoProjects.users.READ, ZohoProjects.milestones.READ, ZohoProjects.forums.READ")
-            print("Проверьте, что скопы прописаны в credentials/zoho.env и в веб-консоли Zoho.")
-            print("Если ошибка повторяется — попробуйте обновить токены и проверить права пользователя.")
+            print(
+                "❌ Не удалось получить список проектов. Проверьте права доступа и скопы."
+            )
+            print(
+                "Рекомендуемые скопы: ZohoProjects.projects.READ, ZohoProjects.tasks.READ, ZohoProjects.tasklists.READ, ZohoProjects.bugs.READ, ZohoProjects.users.READ, ZohoProjects.milestones.READ, ZohoProjects.forums.READ"
+            )
+            print(
+                "Проверьте, что скопы прописаны в credentials/zoho.env и в веб-консоли Zoho."
+            )
+            print(
+                "Если ошибка повторяется — попробуйте обновить токены и проверить права пользователя."
+            )
             return []
         return response.get("projects", [])
 

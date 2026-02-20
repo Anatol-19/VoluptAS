@@ -5,8 +5,13 @@ Import Dialogs
 """
 
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QFileDialog, QPushButton,
-    QLabel, QProgressBar, QMessageBox
+    QDialog,
+    QVBoxLayout,
+    QFileDialog,
+    QPushButton,
+    QLabel,
+    QProgressBar,
+    QMessageBox,
 )
 from src.services.GoogleSheetsImporter import GoogleSheetsImporter
 from src.db import SessionLocal
@@ -50,10 +55,7 @@ class ImportFromCsvDialog(QDialog):
     def select_file(self):
         """Выбор CSV файла"""
         file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Выберите CSV файл",
-            "",
-            "CSV files (*.csv);;All Files (*)"
+            self, "Выберите CSV файл", "", "CSV files (*.csv);;All Files (*)"
         )
         if file_path:
             self.file_path = file_path
@@ -70,24 +72,22 @@ class ImportFromCsvDialog(QDialog):
 
         try:
             session = SessionLocal()
-            importer = GoogleSheetsImporter(Config.get_credentials_path('google_credentials.json'), session)
+            importer = GoogleSheetsImporter(
+                Config.get_credentials_path("google_credentials.json"), session
+            )
 
             # Импортируем данные
             importer.import_from_csv(self.file_path)
             session.commit()
 
             QMessageBox.information(
-                self,
-                "Импорт завершен",
-                "Данные успешно импортированы"
+                self, "Импорт завершен", "Данные успешно импортированы"
             )
             self.accept()
 
         except Exception as e:
             QMessageBox.critical(
-                self,
-                "Ошибка импорта",
-                f"Произошла ошибка при импорте: {str(e)}"
+                self, "Ошибка импорта", f"Произошла ошибка при импорте: {str(e)}"
             )
 
         finally:

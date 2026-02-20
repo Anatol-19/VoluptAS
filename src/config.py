@@ -177,6 +177,7 @@ class Config:
             list[str]: Список имен проектов
         """
         import os
+
         projects_dir = cls.DATA_DIR / "projects"
         if not projects_dir.exists():
             return ["default"]
@@ -239,6 +240,7 @@ class Config:
 
             # Создаем базу данных
             from src.db import init_db
+
             cls.switch_project(project_name)
             init_db()
 
@@ -246,9 +248,11 @@ class Config:
 
         except Exception as e:
             import logging
+
             logging.error(f"Ошибка создания проекта {project_name}: {e}")
             if project_dir.exists():
                 import shutil
+
                 shutil.rmtree(project_dir)
             return False
 
@@ -273,6 +277,7 @@ class Config:
         try:
             # Удаляем директорию проекта
             import shutil
+
             shutil.rmtree(project_dir)
 
             # Удаляем креденшелы
@@ -284,5 +289,6 @@ class Config:
 
         except Exception as e:
             import logging
+
             logging.error(f"Ошибка удаления проекта {project_name}: {e}")
             return False

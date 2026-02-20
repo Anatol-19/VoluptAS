@@ -5,8 +5,13 @@ Export Dialogs
 """
 
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QFileDialog, QPushButton,
-    QLabel, QProgressBar, QMessageBox
+    QDialog,
+    QVBoxLayout,
+    QFileDialog,
+    QPushButton,
+    QLabel,
+    QProgressBar,
+    QMessageBox,
 )
 
 
@@ -46,10 +51,7 @@ class ExportToCsvDialog(QDialog):
     def select_path(self):
         """Выбор пути сохранения"""
         file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Сохранить как",
-            "",
-            "CSV files (*.csv);;All Files (*)"
+            self, "Сохранить как", "", "CSV files (*.csv);;All Files (*)"
         )
         if file_path:
             self.path_label.setText(file_path)
@@ -59,7 +61,5 @@ class ExportToCsvDialog(QDialog):
         """Начать экспорт"""
         # TODO: Реализовать экспорт
         QMessageBox.information(
-            self,
-            "Экспорт",
-            "Экспорт будет реализован в следующей версии"
+            self, "Экспорт", "Экспорт будет реализован в следующей версии"
         )

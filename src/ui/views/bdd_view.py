@@ -54,8 +54,6 @@ class BDDView(QWidget):
         """Обновление данных"""
         # TODO: Загрузить список Feature файлов
         self.list_widget.clear()
-        self.list_widget.addItems([
-            "login.feature",
-            "user_profile.feature",
-            "product_catalog.feature"
-        ])
+        self.list_widget.addItems(
+            ["login.feature", "user_profile.feature", "product_catalog.feature"]
+        )

@@ -28,7 +28,9 @@ class CoverageMatrixView(QWidget):
 
         # Таблица покрытия
         self.table = QTableView()
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setSelectionBehavior(QTableView.SelectionBehavior.SelectItems)
         layout.addWidget(self.table)

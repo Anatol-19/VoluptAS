@@ -5,10 +5,30 @@ Project Dialogs
 """
 
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QPushButton,
-    QLabel, QListWidget, QMessageBox,
-    QInputDialog
+    QDialog,
+    QVBoxLayout,
+    QPushButton,
+    QLabel,
+    QListWidget,
+    QMessageBox,
+    QInputDialog,
+    QLineEdit,
+    QTextEdit,
+    QComboBox,
+    QCheckBox,
+    QDialogButtonBox,
+    QFormLayout,
+    QHBoxLayout,
+    QGroupBox,
+    QListWidgetItem,
 )
+from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtGui import QAction, QFont
+import logging
+import re
+
+logger = logging.getLogger(__name__)
+
 from src.config import Config
 
 
@@ -303,19 +323,6 @@ class ProjectSelectorDialog(QDialog):
             months = delta.days // 30
             return f"{months} мес назад"
 
-        # Кнопки управления
-        btn_new = QPushButton("Создать проект")
-        btn_new.clicked.connect(self.create_project)
-        layout.addWidget(btn_new)
-
-        btn_switch = QPushButton("Переключить")
-        btn_switch.clicked.connect(self.switch_project)
-        layout.addWidget(btn_switch)
-
-        btn_delete = QPushButton("Удалить")
-        btn_delete.clicked.connect(self.delete_project)
-        layout.addWidget(btn_delete)
-
     def refresh_projects(self):
         """Обновление списка проектов"""
         self.list_widget.clear()
@@ -326,6 +333,7 @@ class ProjectSelectorDialog(QDialog):
             if self.list_widget.item(i).text() == Config.CURRENT_PROJECT:
                 self.list_widget.setCurrentRow(i)
                 break
+
 
 class NewProjectDialog(QDialog):
     """Диалог создания нового проекта"""

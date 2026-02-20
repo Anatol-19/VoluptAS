@@ -9,9 +9,4 @@ from .bdd_view import BDDView
 from .coverage_view import CoverageMatrixView
 from .infra_view import InfraMaturityView
 
-__all__ = [
-    'TableView',
-    'BDDView',
-    'CoverageMatrixView',
-    'InfraMaturityView'
-]
+__all__ = ["TableView", "BDDView", "CoverageMatrixView", "InfraMaturityView"]

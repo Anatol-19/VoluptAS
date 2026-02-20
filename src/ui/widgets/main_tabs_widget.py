@@ -150,11 +150,11 @@ class MainTabsWidget(QWidget):
         # Перезагружаем данные во всех вкладках
         for i in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(i)
-            if hasattr(widget, 'refresh'):
+            if hasattr(widget, "refresh"):
                 widget.refresh()
-            elif hasattr(widget, 'layout'):
+            elif hasattr(widget, "layout"):
                 # Для составных виджетов (как таблица + мини-граф)
                 for j in range(widget.layout().count()):
                     child = widget.layout().itemAt(j).widget()
-                    if hasattr(child, 'refresh'):
+                    if hasattr(child, "refresh"):
                         child.refresh()

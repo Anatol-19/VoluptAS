@@ -5,9 +5,17 @@ Entity Editor Dialog
 """
 
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
-    QLabel, QTreeWidget, QTreeWidgetItem, QMessageBox,
-    QMenu, QLineEdit, QComboBox
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QMessageBox,
+    QMenu,
+    QLineEdit,
+    QComboBox,
 )
 from PyQt6.QtCore import Qt
 from src.db import SessionLocal
@@ -67,12 +75,10 @@ class EntityEditorDialog(QDialog):
         items = self.session.query(FunctionalItem).all()
 
         # Создаем словарь для быстрого поиска родителей
-        items_dict = {item.id: QTreeWidgetItem([
-            str(item.id),
-            item.name,
-            item.type,
-            item.status
-        ]) for item in items}
+        items_dict = {
+            item.id: QTreeWidgetItem([str(item.id), item.name, item.type, item.status])
+            for item in items
+        }
 
         # Строим дерево
         for item in items:
@@ -127,7 +133,7 @@ class EntityEditorDialog(QDialog):
                 item = FunctionalItem(
                     name=dialog.name_input.text(),
                     type=dialog.type_combo.currentText(),
-                    status=dialog.status_combo.currentText()
+                    status=dialog.status_combo.currentText(),
                 )
 
                 current = self.tree.currentItem()
@@ -140,9 +146,7 @@ class EntityEditorDialog(QDialog):
 
             except Exception as e:
                 QMessageBox.critical(
-                    self,
-                    "Ошибка",
-                    f"Не удалось добавить элемент: {str(e)}"
+                    self, "Ошибка", f"Не удалось добавить элемент: {str(e)}"
                 )
 
     def edit_item(self):
@@ -169,9 +173,7 @@ class EntityEditorDialog(QDialog):
 
             except Exception as e:
                 QMessageBox.critical(
-                    self,
-                    "Ошибка",
-                    f"Не удалось обновить элемент: {str(e)}"
+                    self, "Ошибка", f"Не удалось обновить элемент: {str(e)}"
                 )
 
     def delete_item(self):
@@ -184,7 +186,7 @@ class EntityEditorDialog(QDialog):
             self,
             "Подтверждение",
             "Вы уверены, что хотите удалить этот элемент?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -198,9 +200,7 @@ class EntityEditorDialog(QDialog):
 
             except Exception as e:
                 QMessageBox.critical(
-                    self,
-                    "Ошибка",
-                    f"Не удалось удалить элемент: {str(e)}"
+                    self, "Ошибка", f"Не удалось удалить элемент: {str(e)}"
                 )
 
     def closeEvent(self, event):
@@ -230,26 +230,15 @@ class EntityDialog(QDialog):
         # Тип
         layout.addWidget(QLabel("Тип:"))
         self.type_combo = QComboBox()
-        self.type_combo.addItems([
-            "Module",
-            "Epic",
-            "Feature",
-            "Story",
-            "Page",
-            "Element",
-            "Service"
-        ])
+        self.type_combo.addItems(
+            ["Module", "Epic", "Feature", "Story", "Page", "Element", "Service"]
+        )
         layout.addWidget(self.type_combo)
 
         # Статус
         layout.addWidget(QLabel("Статус:"))
         self.status_combo = QComboBox()
-        self.status_combo.addItems([
-            "New",
-            "In Progress",
-            "Done",
-            "Blocked"
-        ])
+        self.status_combo.addItems(["New", "In Progress", "Done", "Blocked"])
         layout.addWidget(self.status_combo)
 
         # Кнопки

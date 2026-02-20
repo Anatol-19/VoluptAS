@@ -5,7 +5,16 @@
 Основана на реальной структуре из VoluptaS VRS.xlsx
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table, Boolean
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    DateTime,
+    ForeignKey,
+    Table,
+    Boolean,
+)
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from src.db.base import Base

@@ -5,8 +5,13 @@ Relations Editor Dialog
 """
 
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QTableWidget, QTableWidgetItem,
-    QPushButton, QHBoxLayout, QMessageBox
+    QDialog,
+    QVBoxLayout,
+    QTableWidget,
+    QTableWidgetItem,
+    QPushButton,
+    QHBoxLayout,
+    QMessageBox,
 )
 
 
@@ -46,9 +51,9 @@ class RelationsEditorDialog(QDialog):
         # Таблица связей
         self.table = QTableWidget()
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels([
-            "Источник", "Тип связи", "Цель", "Описание"
-        ])
+        self.table.setHorizontalHeaderLabels(
+            ["Источник", "Тип связи", "Цель", "Описание"]
+        )
         layout.addWidget(self.table)
 
     def add_relation(self):
