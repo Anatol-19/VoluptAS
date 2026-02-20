@@ -2,6 +2,7 @@
 Таб: Полный граф связей
 
 Obsidian-style граф со всеми элементами и связями
+Связи строятся из атрибутов (parent_id, module, epic, feature)
 """
 
 from PyQt6.QtWidgets import (
@@ -20,7 +21,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-from src.models import FunctionalItem, Relation, RELATION_TYPES
+from src.models import FunctionalItem
+from src.utils.graph_builder import build_graph_from_attributes, NODE_COLORS
 
 
 class FullGraphTabWidget(QWidget):
@@ -32,16 +34,6 @@ class FullGraphTabWidget(QWidget):
         self.session = parent.session if parent and hasattr(parent, "session") else None
         self.graph = nx.DiGraph()
         self.pos = None
-        self.filters = {
-            "hierarchy": True,
-            "functional": True,
-            "page_element": True,
-            "service_dependency": True,
-            "test_coverage": False,
-            "bug_link": False,
-            "doc_link": False,
-            "custom": False,
-        }
         self._init_ui()
         self.load_graph()
 
@@ -83,31 +75,38 @@ class FullGraphTabWidget(QWidget):
 
     def toggle_filter(self, rel_type, state):
         """Переключить фильтр"""
-        self.filters[rel_type] = state == Qt.CheckState.Checked.value
-        self.refresh_graph()
+        pass  # Пока фильтры отключены
 
     def load_graph(self):
-        """Загрузить граф из БД"""
+        """Загрузить граф из БД — связи из атрибутов"""
         if not self.session:
             return
 
         self.graph.clear()
 
         items = self.session.query(FunctionalItem).all()
-        for item in items:
+        
+        # Строим граф из атрибутов
+        nodes_data, edges_data = build_graph_from_attributes(items)
+        
+        # Добавляем узлы
+        for node in nodes_data:
             self.graph.add_node(
-                item.id,
-                label=item.alias_tag or item.functional_id.split(".")[-1],
-                functional_id=item.functional_id,
-                type=item.type,
-                is_crit=item.is_crit,
-                is_focus=item.is_focus,
+                node['id'],
+                label=node['title'],
+                funcid=node['funcid'],
+                type=node['type'],
+                color=node['color'],
+                size=node['size'],
             )
-
-        relations = self.session.query(Relation).filter_by(active=True).all()
-        for rel in relations:
+        
+        # Добавляем рёбра
+        for edge in edges_data:
             self.graph.add_edge(
-                rel.source_id, rel.target_id, type=rel.type, weight=rel.weight
+                edge['from'],
+                edge['to'],
+                type=edge['type'],
+                weight=edge['weight'],
             )
 
         self.refresh_graph()
@@ -116,21 +115,14 @@ class FullGraphTabWidget(QWidget):
         """Перерисовать граф"""
         self.figure.clear()
         ax = self.figure.add_subplot(111, facecolor="#1e1e1e")
+        ax.set_title("Граф связей (из атрибутов)", color="#ffffff", fontsize=14)
+        ax.axis('off')
 
-        # Фильтруем рёбра
-        filtered_graph = self.graph.copy()
-        edges_to_remove = []
-        for u, v, data in filtered_graph.edges(data=True):
-            rel_type = data.get("type", "functional")
-            if not self.filters.get(rel_type, False):
-                edges_to_remove.append((u, v))
-        filtered_graph.remove_edges_from(edges_to_remove)
-
-        if len(filtered_graph.nodes()) == 0:
+        if len(self.graph.nodes()) == 0:
             ax.text(
                 0.5,
                 0.5,
-                "Нет узлов\nВключите фильтры",
+                "Нет связей\nПроверьте данные",
                 ha="center",
                 va="center",
                 fontsize=14,
@@ -139,77 +131,75 @@ class FullGraphTabWidget(QWidget):
             self.canvas.draw()
             return
 
-        # Layout
-        if self.pos is None or len(self.pos) != len(filtered_graph.nodes()):
-            self.pos = nx.spring_layout(filtered_graph, k=0.5, iterations=50, seed=42)
+        # Layout — иерархический
+        self.pos = nx.spring_layout(self.graph, k=0.7, iterations=50, seed=42)
 
-        # Рисуем узлы (Obsidian-стиль)
-        node_types = {
-            "Module": {"color": "#9580ff", "size": 700},
-            "Epic": {"color": "#7c98f6", "size": 550},
-            "Feature": {"color": "#6dd8b1", "size": 450},
-            "Story": {"color": "#b4dcc7", "size": 350},
-            "Service": {"color": "#d19afd", "size": 450},
-            "Page": {"color": "#ffb86c", "size": 450},
-            "Element": {"color": "#ffd97d", "size": 280},
-        }
-
-        for node_type, style in node_types.items():
+        # Рисуем узлы с цветами из graph_builder
+        for node_type in NODE_COLORS.keys():
             nodes = [
                 n
-                for n, d in filtered_graph.nodes(data=True)
+                for n, d in self.graph.nodes(data=True)
                 if d.get("type") == node_type
             ]
             if nodes:
-                sizes = [
-                    (
-                        style["size"] * 1.5
-                        if filtered_graph.nodes[n].get("is_crit")
-                        else style["size"]
-                    )
-                    for n in nodes
-                ]
+                sizes = [self.graph.nodes[n].get('size', 1000) for n in nodes]
+                colors = [self.graph.nodes[n].get('color', NODE_COLORS.get(node_type, '#808080')) for n in nodes]
                 nx.draw_networkx_nodes(
-                    filtered_graph,
+                    self.graph,
                     self.pos,
                     nodelist=nodes,
-                    node_color=style["color"],
+                    node_color=colors,
                     node_size=sizes,
-                    alpha=0.8,
+                    alpha=0.9,
                     ax=ax,
                     edgecolors="#4a4a4a",
                     linewidths=1.5,
                 )
 
         # Рисуем рёбра
-        for rel_type, config in RELATION_TYPES.items():
+        edge_colors = {
+            'parent-of': '#ffffff',
+            'module-of': '#1E90FF',
+            'epic-of': '#32CD32',
+            'feature-of': '#FFA500',
+            'story-of': '#9370DB',
+            'page-of': '#FF69B4',
+        }
+        
+        for rel_type, color in edge_colors.items():
             edges = [
                 (u, v)
-                for u, v, d in filtered_graph.edges(data=True)
+                for u, v, d in self.graph.edges(data=True)
                 if d.get("type") == rel_type
             ]
             if edges:
                 nx.draw_networkx_edges(
-                    filtered_graph,
+                    self.graph,
                     self.pos,
                     edgelist=edges,
-                    edge_color=config["color"],
-                    width=1.2,
-                    style=config["style"],
-                    alpha=0.5,
+                    edge_color=color,
+                    width=1.5,
+                    alpha=0.6,
                     arrows=True,
-                    arrowsize=6,
+                    arrowsize=20,
+                    arrowstyle='-|>',
                     ax=ax,
-                    connectionstyle="arc3,rad=0.1",
                 )
 
-        # Подписи
-        labels = {n: d["label"] for n, d in filtered_graph.nodes(data=True)}
+        # Подписи узлов
+        labels = {
+            n: d.get('label', str(n))
+            for n, d in self.graph.nodes(data=True)
+        }
         nx.draw_networkx_labels(
-            filtered_graph, self.pos, labels, font_size=8, font_color="#e5e7eb", ax=ax
+            self.graph,
+            self.pos,
+            labels=labels,
+            font_size=8,
+            font_color="#ffffff",
+            ax=ax,
         )
 
-        ax.axis("off")
         self.canvas.draw()
 
     def export_graph(self):

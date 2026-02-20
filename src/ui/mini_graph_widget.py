@@ -1,5 +1,6 @@
 """
 Мини-граф для отображения связей выбранного элемента на главном экране
+Связи строятся из атрибутов (parent_id, module, epic, feature)
 """
 
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
@@ -8,7 +9,8 @@ import networkx as nx
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-from src.models import FunctionalItem, Relation, RELATION_TYPES
+from src.models import FunctionalItem
+from src.utils.graph_builder import get_item_neighbors, NODE_COLORS
 
 
 class MiniGraphWidget(QWidget):
@@ -19,6 +21,7 @@ class MiniGraphWidget(QWidget):
         # Используем session из parent (MainWindow)
         self.session = parent.session if parent and hasattr(parent, "session") else None
         self.current_item_id = None
+        self.all_items = []
 
         self.init_ui()
 
@@ -28,7 +31,7 @@ class MiniGraphWidget(QWidget):
 
         # Заголовок
         self.title_label = QLabel("Граф связей")
-        self.title_label.setStyleSheet("font-weight: bold; font-size: 11pt;")
+        self.title_label.setStyleSheet("font-weight: bold; font-size: 11pt; color: #ffffff;")
         layout.addWidget(self.title_label)
 
         # Canvas (тёмный фон как в Obsidian)
@@ -43,7 +46,7 @@ class MiniGraphWidget(QWidget):
         layout.addWidget(self.hint_label)
 
     def update_graph(self, item_id):
-        """Обновить граф для выбранного элемента"""
+        """Обновить граф для выбранного элемента — связи из атрибутов"""
         if not self.session or not item_id:
             self.clear_graph()
             return
@@ -56,15 +59,13 @@ class MiniGraphWidget(QWidget):
             self.clear_graph()
             return
 
-        # Загружаем связи (исходящие и входящие)
-        outgoing = (
-            self.session.query(Relation).filter_by(source_id=item_id, active=True).all()
-        )
-        incoming = (
-            self.session.query(Relation).filter_by(target_id=item_id, active=True).all()
-        )
+        # Загружаем все элементы для поиска связей
+        self.all_items = self.session.query(FunctionalItem).all()
 
-        if not outgoing and not incoming:
+        # Получаем соседей из атрибутов
+        parents, children = get_item_neighbors(item, self.all_items)
+
+        if not parents and not children:
             self.show_no_relations(item)
             return
 
@@ -74,41 +75,36 @@ class MiniGraphWidget(QWidget):
         # Добавляем центральный узел
         G.add_node(
             item.id,
-            label=item.alias_tag or item.functional_id.split(".")[-1],
+            label=item.title,
             type=item.type,
+            color=NODE_COLORS.get(item.type, '#808080'),
+            size=2000,
             center=True,
         )
 
-        # Добавляем связанные узлы
-        related_items = {}
-
-        for rel in outgoing:
-            target = (
-                self.session.query(FunctionalItem).filter_by(id=rel.target_id).first()
+        # Добавляем родителей
+        for parent in parents:
+            G.add_node(
+                parent.id,
+                label=parent.title,
+                type=parent.type,
+                color=NODE_COLORS.get(parent.type, '#808080'),
+                size=1500,
+                center=False,
             )
-            if target:
-                G.add_node(
-                    target.id,
-                    label=target.alias_tag or target.functional_id.split(".")[-1],
-                    type=target.type,
-                    center=False,
-                )
-                G.add_edge(item.id, target.id, type=rel.type, weight=rel.weight)
-                related_items[target.id] = target
+            G.add_edge(parent.id, item.id, type='parent-of')
 
-        for rel in incoming:
-            source = (
-                self.session.query(FunctionalItem).filter_by(id=rel.source_id).first()
+        # Добавляем детей
+        for child in children:
+            G.add_node(
+                child.id,
+                label=child.title,
+                type=child.type,
+                color=NODE_COLORS.get(child.type, '#808080'),
+                size=1000,
+                center=False,
             )
-            if source:
-                G.add_node(
-                    source.id,
-                    label=source.alias_tag or source.functional_id.split(".")[-1],
-                    type=source.type,
-                    center=False,
-                )
-                G.add_edge(source.id, item.id, type=rel.type, weight=rel.weight)
-                related_items[source.id] = source
+            G.add_edge(item.id, child.id, type='parent-of')
 
         # Рисуем
         self.draw_graph(G, item)
@@ -117,32 +113,18 @@ class MiniGraphWidget(QWidget):
         """Отрисовать граф"""
         self.figure.clear()
         ax = self.figure.add_subplot(111, facecolor="#1e1e1e")
+        ax.set_title(f"{center_item.title}", fontsize=10, color="#ffffff")
 
-        # Layout: центральный узел в центре, остальные вокруг
+        # Layout: spring
         pos = nx.spring_layout(G, k=1.5, iterations=30, seed=42)
 
-        # Цвета нод (Obsidian-стиль)
+        # Цвета нод из графа
         node_colors = []
         node_sizes = []
         for node in G.nodes():
             node_data = G.nodes[node]
-            if node_data.get("center"):
-                node_colors.append("#ff7eb6")  # Мягкий розовый для центрального
-                node_sizes.append(700)
-            else:
-                # Цвет по типу
-                node_type = node_data.get("type", "Feature")
-                type_colors = {
-                    "Module": "#9580ff",
-                    "Epic": "#7c98f6",
-                    "Feature": "#6dd8b1",
-                    "Story": "#b4dcc7",
-                    "Service": "#d19afd",
-                    "Page": "#ffb86c",
-                    "Element": "#ffd97d",
-                }
-                node_colors.append(type_colors.get(node_type, "#6dd8b1"))
-                node_sizes.append(450)
+            node_colors.append(node_data.get('color', '#808080'))
+            node_sizes.append(node_data.get('size', 1000))
 
         # Рисуем узлы
         nx.draw_networkx_nodes(
@@ -150,31 +132,27 @@ class MiniGraphWidget(QWidget):
             pos,
             node_color=node_colors,
             node_size=node_sizes,
-            alpha=0.8,
+            alpha=0.9,
             ax=ax,
             edgecolors="#4a4a4a",
             linewidths=1.5,
         )
 
-        # Рисуем рёбра по типам
-        for rel_type, config in RELATION_TYPES.items():
-            edges = [
-                (u, v) for u, v, d in G.edges(data=True) if d.get("type") == rel_type
-            ]
-            if edges:
-                nx.draw_networkx_edges(
-                    G,
-                    pos,
-                    edgelist=edges,
-                    edge_color=config["color"],
-                    width=1.2,
-                    style=config["style"],
-                    alpha=0.5,
-                    arrows=True,
-                    arrowsize=6,
-                    ax=ax,
-                    connectionstyle="arc3,rad=0.1",
-                )
+        # Рисуем рёбра
+        edges = G.edges()
+        if edges:
+            nx.draw_networkx_edges(
+                G,
+                pos,
+                edgelist=edges,
+                edge_color='#ffffff',
+                width=1.5,
+                alpha=0.6,
+                arrows=True,
+                arrowsize=15,
+                arrowstyle='-|>',
+                ax=ax,
+            )
 
         # Подписи (светлый текст на тёмном фоне)
         labels = {n: d["label"] for n, d in G.nodes(data=True)}
@@ -190,7 +168,7 @@ class MiniGraphWidget(QWidget):
 
         ax.axis("off")
         ax.set_title(
-            f"{center_item.alias_tag or center_item.functional_id}",
+            f"{center_item.title}",
             fontsize=10,
             fontweight="normal",
             color="#d1d5db",
