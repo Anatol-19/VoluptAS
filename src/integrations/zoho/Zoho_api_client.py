@@ -397,6 +397,23 @@ class ZohoAPI:
             return []
         return response.get("users", [])
 
+    def get_defects(self, status: str = None) -> list[dict]:
+        """
+        Получает список дефектов (багов) в проекте.
+        :param status: Фильтр по статусу (Open, Closed, All)
+        :return list[dict]: Список дефектов.
+        """
+        url = f"{self.base_url}/projects/{self.project_id}/defects/"
+        params = {}
+        if status:
+            params["status"] = status
+
+        response = self.send_request(url, params)
+        if response is None:
+            print(f"❌ Не удалось получить дефекты. Проверьте права доступа.")
+            return []
+        return response.get("defects", [])
+
     def get_tasks_by_milestone(self, milestone_id: str) -> list[dict]:
         """
         Получает задачи, связанные с мейлстоуном.

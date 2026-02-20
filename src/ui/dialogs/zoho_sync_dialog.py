@@ -60,7 +60,7 @@ class SyncThread(QThread):
 
 
 class ZohoSyncDialog(QDialog):
-    """Диалог синхронизации задач Zoho Projects"""
+    """Диалог синхронизации Zoho Projects (Tasks, Users, Defects)"""
 
     def __init__(self, session, parent=None):
         super().__init__(parent)
@@ -68,76 +68,53 @@ class ZohoSyncDialog(QDialog):
         self.sync_thread = None
 
         self.setWindowTitle("Синхронизация Zoho Projects")
-        self.setMinimumWidth(600)
-        self.setMinimumHeight(500)
+        self.setMinimumWidth(700)
+        self.setMinimumHeight(600)
 
         self.init_ui()
 
     def init_ui(self):
         layout = QVBoxLayout(self)
 
-        # Информация
-        info_label = QLabel(
-            "🔄 <b>Синхронизация задач из Zoho Projects</b><br><br>"
-            "Загрузите задачи из Zoho и сохраните их в локальной БД VoluptAS."
-        )
-        info_label.setWordWrap(True)
-        layout.addWidget(info_label)
+        # Вкладки
+        tabs = QTabWidget()
 
-        # === Секция 1: Тип синхронизации ===
-        sync_type_group = QGroupBox("Тип синхронизации")
-        sync_type_layout = QVBoxLayout(sync_type_group)
+        # Вкладка 1: Tasks
+        tasks_tab = self.create_tasks_tab()
+        tabs.addTab(tasks_tab, "📋 Tasks")
 
-        self.sync_type_combo = QComboBox()
-        self.sync_type_combo.addItems(
-            [
-                "По Milestone (спринт)",
-                "По Tasklist",
-                "По фильтрам (даты, ответственные)",
-            ]
-        )
-        self.sync_type_combo.currentTextChanged.connect(self.on_sync_type_changed)
-        sync_type_layout.addWidget(self.sync_type_combo)
+        # Вкладка 2: Users
+        users_tab = self.create_users_tab()
+        tabs.addTab(users_tab, "👥 Users")
 
-        layout.addWidget(sync_type_group)
+        # Вкладка 3: Defects
+        defects_tab = self.create_defects_tab()
+        tabs.addTab(defects_tab, "🐛 Defects")
 
-        # === Секция 2: Параметры (динамические) ===
-        self.params_group = QGroupBox("Параметры")
-        self.params_layout = QFormLayout(self.params_group)
+        layout.addWidget(tabs)
 
-        # Milestone
-        self.milestone_edit = QLineEdit()
-        self.milestone_edit.setPlaceholderText("Например: Sprint 24, v2.5")
-        self.params_layout.addRow("* Название Milestone:", self.milestone_edit)
-
-        # Tasklist
-        self.tasklist_edit = QLineEdit()
-        self.tasklist_edit.setPlaceholderText("Например: QA Testing, Development")
-        self.params_layout.addRow("* Название Tasklist:", self.tasklist_edit)
-
-        # Фильтры по датам
-        self.date_start_edit = QLineEdit()
-        self.date_start_edit.setPlaceholderText("YYYY-MM-DD")
-        self.params_layout.addRow("Дата начала:", self.date_start_edit)
-
-        self.date_end_edit = QLineEdit()
-        self.date_end_edit.setPlaceholderText("YYYY-MM-DD")
-        self.params_layout.addRow("Дата окончания:", self.date_end_edit)
-
-        # Owner ID (опционально)
-        self.owner_id_edit = QLineEdit()
-        self.owner_id_edit.setPlaceholderText("ID ответственного в Zoho")
-        self.params_layout.addRow("Owner ID:", self.owner_id_edit)
-
-        layout.addWidget(self.params_group)
-
-        # Скрываем ненужные поля по умолчанию
-        self.on_sync_type_changed(self.sync_type_combo.currentText())
-
-        # === Прогресс ===
+        # Прогресс
         self.progress_label = QLabel("")
         self.progress_label.setStyleSheet("color: blue;")
         layout.addWidget(self.progress_label)
+
+        # Кнопки
+        layout.addStretch()
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+
+        self.sync_button = QPushButton("🔄 Синхронизировать")
+        self.sync_button.clicked.connect(self.start_sync)
+        button_layout.addWidget(self.sync_button)
+
+        self.cancel_button = QPushButton("❌ Отмена")
+        self.cancel_button.clicked.connect(self.reject)
+        button_layout.addWidget(self.cancel_button)
+
+        layout.addLayout(button_layout)
+
+        # По умолчанию Tasks
+        tabs.setCurrentIndex(0)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
@@ -215,6 +192,192 @@ class ZohoSyncDialog(QDialog):
 
             owner_label.setVisible(True)
             self.owner_id_edit.setVisible(True)
+
+    def create_users_tab(self):
+        """Вкладка синхронизации пользователей"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
+        info = QLabel(
+            "👥 <b>Синхронизация пользователей из Zoho Projects</b><br><br>"
+            "Загрузите список пользователей и создайте их в локальной БД."
+        )
+        info.setWordWrap(True)
+        layout.addWidget(info)
+
+        # Поиск
+        search_layout = QHBoxLayout()
+        search_layout.addWidget(QLabel("🔍 Поиск:"))
+        self.user_search_edit = QLineEdit()
+        self.user_search_edit.setPlaceholderText("Введите имя или email...")
+        search_layout.addWidget(self.user_search_edit)
+        layout.addLayout(search_layout)
+
+        # Список пользователей
+        self.users_list = QListWidget()
+        layout.addWidget(self.users_list)
+
+        # Кнопки
+        btn_layout = QHBoxLayout()
+        self.load_users_btn = QPushButton("📥 Загрузить пользователей")
+        self.load_users_btn.clicked.connect(self.load_zoho_users)
+        btn_layout.addWidget(self.load_users_btn)
+
+        self.import_users_btn = QPushButton("✅ Импортировать выбранные")
+        self.import_users_btn.clicked.connect(self.import_selected_users)
+        btn_layout.addWidget(self.import_users_btn)
+
+        layout.addLayout(btn_layout)
+
+        return tab
+
+    def create_defects_tab(self):
+        """Вкладка синхронизации дефектов"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
+        info = QLabel(
+            "🐛 <b>Синхронизация дефектов (багов) из Zoho Projects</b><br><br>"
+            "Загрузите список дефектов и создайте их как FunctionalItem с type='Defect'."
+        )
+        info.setWordWrap(True)
+        layout.addWidget(info)
+
+        # Фильтр по статусу
+        status_layout = QHBoxLayout()
+        status_layout.addWidget(QLabel("Статус:"))
+        self.defect_status_combo = QComboBox()
+        self.defect_status_combo.addItems(["All", "Open", "Closed", "In Progress"])
+        status_layout.addWidget(self.defect_status_combo)
+        layout.addLayout(status_layout)
+
+        # Список дефектов
+        self.defects_list = QListWidget()
+        layout.addWidget(self.defects_list)
+
+        # Кнопки
+        btn_layout = QHBoxLayout()
+        self.load_defects_btn = QPushButton("📥 Загрузить дефекты")
+        self.load_defects_btn.clicked.connect(self.load_zoho_defects)
+        btn_layout.addWidget(self.load_defects_btn)
+
+        self.import_defects_btn = QPushButton("✅ Импортировать выбранные")
+        self.import_defects_btn.clicked.connect(self.import_selected_defects)
+        btn_layout.addWidget(self.import_defects_btn)
+
+        layout.addLayout(btn_layout)
+
+        return tab
+
+    def load_zoho_users(self):
+        """Загрузка пользователей из Zoho"""
+        from src.integrations.zoho.Zoho_api_client import ZohoAPI
+
+        try:
+            zoho = ZohoAPI()
+            search_term = self.user_search_edit.text().strip()
+            users = zoho.get_users(search_term if search_term else None)
+
+            self.users_list.clear()
+            for user in users:
+                name = user.get("name", "Unknown")
+                email = user.get("email", "")
+                role = user.get("role", "")
+                item_text = f"{name} ({email}) - {role}"
+                self.users_list.addItem(item_text)
+
+            self.progress_label.setText(f"✅ Загружено {len(users)} пользователей")
+        except Exception as e:
+            self.progress_label.setText(f"❌ Ошибка: {e}")
+
+    def import_selected_users(self):
+        """Импорт выбранных пользователей в БД"""
+        from src.models import User
+
+        selected_items = self.users_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "Внимание", "Выберите пользователей для импорта")
+            return
+
+        imported_count = 0
+        for item in selected_items:
+            item_text = item.text()
+            name = item_text.split(" (")[0]
+
+            # Проверяем есть ли уже
+            existing = self.session.query(User).filter_by(name=name).first()
+            if existing:
+                continue
+
+            # Создаём нового
+            new_user = User(name=name, is_active=1)
+            self.session.add(new_user)
+            imported_count += 1
+
+        self.session.commit()
+        self.progress_label.setText(f"✅ Импортировано {imported_count} пользователей")
+
+    def load_zoho_defects(self):
+        """Загрузка дефектов из Zoho"""
+        from src.integrations.zoho.Zoho_api_client import ZohoAPI
+
+        try:
+            zoho = ZohoAPI()
+            status = self.defect_status_combo.currentText()
+            if status == "All":
+                status = None
+            defects = zoho.get_defects(status)
+
+            self.defects_list.clear()
+            for defect in defects:
+                title = defect.get("title", "Unknown")
+                defect_id = defect.get("defect_id", "")
+                status = defect.get("status", "")
+                item_text = f"#{defect_id}: {title} [{status}]"
+                self.defects_list.addItem(item_text)
+
+            self.progress_label.setText(f"✅ Загружено {len(defects)} дефектов")
+        except Exception as e:
+            self.progress_label.setText(f"❌ Ошибка: {e}")
+
+    def import_selected_defects(self):
+        """Импорт выбранных дефектов в БД"""
+        from src.models import FunctionalItem
+
+        selected_items = self.defects_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "Внимание", "Выберите дефекты для импорта")
+            return
+
+        imported_count = 0
+        for item in selected_items:
+            item_text = item.text()
+            # Парсим: #123: Title [Status]
+            parts = item_text.split(": ", 1)
+            defect_id = parts[0].replace("#", "") if len(parts) > 0 else ""
+            rest = parts[1].split(" [") if len(parts) > 1 else ["", ""]
+            title = rest[0] if len(rest) > 0 else item_text
+
+            # Проверяем есть ли уже
+            funcid = f"DEFECT:{defect_id}"
+            existing = self.session.query(FunctionalItem).filter_by(functional_id=funcid).first()
+            if existing:
+                continue
+
+            # Создаём новый
+            new_defect = FunctionalItem(
+                functional_id=funcid,
+                title=title,
+                type="Defect",
+                description=f"Импортировано из Zoho (Defect #{defect_id})",
+                is_crit=0,
+                is_focus=0,
+            )
+            self.session.add(new_defect)
+            imported_count += 1
+
+        self.session.commit()
+        self.progress_label.setText(f"✅ Импортировано {imported_count} дефектов")
 
     def start_sync(self):
         """Начать синхронизацию"""
