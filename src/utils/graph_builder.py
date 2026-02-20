@@ -109,19 +109,9 @@ def build_graph_from_attributes(items: List[FunctionalItem]) -> Tuple[List[Dict]
                     'weight': 0.95,
                 })
         
-        # story — связь story-of
-        if item.story:
-            parent = find_parent_by_title(items, item.story, 'Story')
-            if parent and parent.id != item.id:
-                edges.append({
-                    'from': parent.id,
-                    'to': item.id,
-                    'type': 'story-of',
-                    'weight': 0.95,
-                })
-        
-        # page — связь page-of
-        if item.page:
+        # stories — JSON array или CSV, не используем для иерархии
+        # page — связь page-of (если есть поле)
+        if hasattr(item, 'page') and item.page:
             parent = find_parent_by_title(items, item.page, 'Page')
             if parent and parent.id != item.id:
                 edges.append({
