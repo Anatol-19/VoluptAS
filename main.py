@@ -961,6 +961,10 @@ class MainWindow(QMainWindow):
         self.current_filter = 'all'  # all, crit, focus
         self.init_ui()
         self.load_data()
+        
+        # Проверка на пустую базу — показываем Starter Wizard
+        if not self.current_items:
+            self.show_starter_wizard()
     
     def init_ui(self):
         self.setGeometry(100, 100, 1400, 900)
@@ -2030,10 +2034,28 @@ class MainWindow(QMainWindow):
     def show_project_selector_startup(self):
         """Показать selector проектов при запуске"""
         from src.ui.dialogs.project_dialogs import ProjectSelectorDialog
-        
+
         dialog = ProjectSelectorDialog(self.project_manager, None)
         if dialog.exec() and dialog.selected_project_id:
             self.project_manager.switch_project(dialog.selected_project_id)
+    
+    def show_starter_wizard(self):
+        """Показать мастер наполнения базы для пустых проектов"""
+        from src.ui.dialogs.starter_wizard import StarterWizard
+        
+        dialog = StarterWizard(self.session, self)
+        if dialog.exec() and dialog.selected_template:
+            try:
+                created_count = dialog.apply_template()
+                if created_count > 0:
+                    QMessageBox.information(
+                        self, '✅ Готово',
+                        f'Создано элементов: {created_count}\n\nТеперь вы можете редактировать их в таблице.'
+                    )
+                    self.load_data()  # Обновляем таблицу
+                    self.statusBar().showMessage(f'✅ Создано {created_count} элементов из шаблона')
+            except Exception as e:
+                QMessageBox.critical(self, 'Ошибка', f'Не удалось применить шаблон:\n{e}')
     
     def switch_project(self):
         """Переключение проекта"""
