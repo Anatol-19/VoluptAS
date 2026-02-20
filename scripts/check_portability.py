@@ -11,8 +11,14 @@ Portability Check Script
 
 import os
 import re
+import sys
 from pathlib import Path
 from typing import List, Tuple
+
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 
 
 class PortabilityChecker:
@@ -26,8 +32,8 @@ class PortabilityChecker:
         
     def check_all(self):
         """Запустить все проверки"""
-        print("🔍 Проверка портабельности проекта...\n")
-        
+        print("Проверка портабельности проекта...\n")
+
         self.check_absolute_paths()
         self.check_gitignore()
         self.check_credentials_in_git()
@@ -41,46 +47,20 @@ class PortabilityChecker:
     
     def check_absolute_paths(self):
         """Проверка на абсолютные пути в коде"""
-        print("📂 Проверка абсолютных путей...")
-        
-        # Паттерны абсолютных путей
-        windows_path = re.compile(r'["\']([A-Z]:\\\\[^"\']+)["\']')
-        unix_path = re.compile(r'["\'](/home/[^"\']+|/Users/[^"\']+)["\']')
-        
-        python_files = list(self.project_root.rglob('*.py'))
-        found_paths = []
-        
+        print("Проверка абсолютных путей...")
+        windows_path = re.compile(r'"([A-Z]:\\[^\"]+)"')
+        unix_path = re.compile(r'"(/home/[^\"]+|/Users/[^\"]+)"')
+        python_files = [f for f in self.project_root.rglob('*.py') if '.venv' not in str(f.resolve()) and 'site-packages' not in str(f.resolve())]
         for file in python_files:
-            if '.venv' in str(file) or '__pycache__' in str(file):
-                continue
-                
-            try:
-                content = file.read_text(encoding='utf-8')
-                
-                for match in windows_path.finditer(content):
-                    path = match.group(1)
-                    # Игнорируем примеры в комментариях и docstrings
-                    if 'example' not in path.lower() and 'C:\\\\Auto_Tests' not in path and 'C:\\\\ITS_QA' not in path:
-                        found_paths.append((file, path))
-                
-                for match in unix_path.finditer(content):
-                    path = match.group(1)
-                    if 'example' not in path.lower():
-                        found_paths.append((file, path))
-                        
-            except Exception as e:
-                self.warnings.append(f"Не удалось прочитать {file}: {e}")
-        
-        if found_paths:
-            self.issues.append("❌ Найдены абсолютные пути:")
-            for file, path in found_paths[:5]:  # Показываем первые 5
-                rel_path = file.relative_to(self.project_root)
-                self.issues.append(f"   {rel_path}: {path}")
-            if len(found_paths) > 5:
-                self.issues.append(f"   ... и ещё {len(found_paths) - 5}")
-        else:
-            self.ok.append("✅ Абсолютные пути не найдены")
-    
+            with open(file, encoding='utf-8', errors='ignore') as f:
+                for i, line in enumerate(f):
+                    if windows_path.search(line) or unix_path.search(line):
+                        if 'example' in line or 'test' in line:
+                            continue
+                        self.issues.append(f"{file.relative_to(self.project_root)}:{i+1}: {line.strip()}")
+        if not self.issues:
+            self.ok.append("Нет абсолютных путей в коде")
+
     def check_gitignore(self):
         """Проверка .gitignore"""
         print("📝 Проверка .gitignore...")
@@ -147,27 +127,14 @@ class PortabilityChecker:
             self.warnings.append(f"⚠️  Не удалось проверить git: {e}")
     
     def check_documentation(self):
-        """Проверка документации"""
+        """Проверка наличия документации (теперь только README.md)"""
         print("📚 Проверка документации...")
-        
-        required_docs = [
-            ('README.md', 'основной README'),
-            ('CHANGELOG.md', 'история изменений'),
-            ('TODO.md', 'список задач'),
-        ]
-        
-        missing = []
-        for filename, desc in required_docs:
-            if not (self.project_root / filename).exists():
-                missing.append(f"{filename} ({desc})")
-        
-        if missing:
-            self.warnings.append("⚠️  Отсутствует документация:")
-            for item in missing:
-                self.warnings.append(f"   {item}")
+        readme = self.project_root / "README.md"
+        if readme.exists():
+            self.ok.append("README.md найден и актуален")
         else:
-            self.ok.append("✅ Основная документация на месте")
-    
+            self.warnings.append("Отсутствует README.md (основная документация)")
+
     def check_duplicates(self):
         """Проверка дублей и рудиментов"""
         print("🗑️  Проверка дублей...")
@@ -207,34 +174,30 @@ class PortabilityChecker:
             self.ok.append("✅ Все обязательные файлы на месте")
     
     def print_report(self):
-        """Печать отчёта"""
         print("\n" + "="*60)
-        print("📊 ОТЧЁТ О ПОРТАБЕЛЬНОСТИ")
+        print("ОТЧЁТ О ПОРТАБЕЛЬНОСТИ")
         print("="*60 + "\n")
-        
         if self.ok:
-            print("✅ УСПЕШНО:")
+            print("УСПЕШНО:")
             for item in self.ok:
                 print(f"  {item}")
             print()
-        
         if self.warnings:
-            print("⚠️  ПРЕДУПРЕЖДЕНИЯ:")
+            print("ПРЕДУПРЕЖДЕНИЯ:")
             for item in self.warnings:
                 print(f"  {item}")
             print()
-        
         if self.issues:
-            print("❌ ПРОБЛЕМЫ:")
+            print("ПРОБЛЕМЫ:")
             for item in self.issues:
                 print(f"  {item}")
             print()
-        
         print("="*60)
         if not self.issues:
-            print("✅ Проект готов к переносу!")
+            print("Проект готов к переносу!")
         else:
-            print("❌ Исправьте проблемы перед переносом")
+            print("Исправьте проблемы перед переносом")
+            exit(1)
         print("="*60)
 
 

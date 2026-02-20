@@ -167,3 +167,122 @@ class Config:
         except Exception as e:
             print(f"⚠️ Ошибка чтения справочника {dict_type}: {e}")
             return []
+
+    @classmethod
+    def get_projects_list(cls) -> list[str]:
+        """
+        Получить список всех проектов
+
+        Returns:
+            list[str]: Список имен проектов
+        """
+        import os
+        projects_dir = cls.DATA_DIR / "projects"
+        if not projects_dir.exists():
+            return ["default"]
+        return [d.name for d in projects_dir.iterdir() if d.is_dir()]
+
+    @classmethod
+    def switch_project(cls, project_name: str) -> bool:
+        """
+        Переключить текущий проект
+
+        Args:
+            project_name: Имя проекта
+
+        Returns:
+            bool: True если переключение успешно, False если проект не существует
+        """
+        # Проверяем существование проекта
+        project_dir = cls.DATA_DIR / "projects" / project_name
+        if not project_dir.exists():
+            return False
+
+        # Сохраняем текущий проект
+        current_project_file = cls.DATA_DIR / "config" / "current_project.txt"
+        current_project_file.write_text(project_name)
+
+        # Обновляем текущий проект
+        cls.CURRENT_PROJECT = project_name
+
+        # Обновляем пути к БД
+        cls.DB_PATH = project_dir / "voluptas.db"
+        cls.DB_URI = f"sqlite:///{cls.DB_PATH}"
+
+        return True
+
+    @classmethod
+    def create_project(cls, project_name: str) -> bool:
+        """
+        Создать новый проект
+
+        Args:
+            project_name: Имя проекта
+
+        Returns:
+            bool: True если создание успешно, False если проект уже существует
+        """
+        # Проверяем существование проекта
+        project_dir = cls.DATA_DIR / "projects" / project_name
+        if project_dir.exists():
+            return False
+
+        try:
+            # Создаем структуру проекта
+            project_dir.mkdir(parents=True)
+            (project_dir / "bdd_features").mkdir()
+            (project_dir / "reports").mkdir()
+
+            # Копируем шаблоны креденшелов
+            creds_dir = cls.CREDENTIALS_DIR / project_name
+            creds_dir.mkdir(parents=True)
+
+            # Создаем базу данных
+            from src.db import init_db
+            cls.switch_project(project_name)
+            init_db()
+
+            return True
+
+        except Exception as e:
+            import logging
+            logging.error(f"Ошибка создания проекта {project_name}: {e}")
+            if project_dir.exists():
+                import shutil
+                shutil.rmtree(project_dir)
+            return False
+
+    @classmethod
+    def delete_project(cls, project_name: str) -> bool:
+        """
+        Удалить проект
+
+        Args:
+            project_name: Имя проекта
+
+        Returns:
+            bool: True если удаление успешно, False если проект не существует или это default
+        """
+        if project_name == "default":
+            return False
+
+        project_dir = cls.DATA_DIR / "projects" / project_name
+        if not project_dir.exists():
+            return False
+
+        try:
+            # Удаляем директорию проекта
+            import shutil
+            shutil.rmtree(project_dir)
+
+            # Удаляем креденшелы
+            creds_dir = cls.CREDENTIALS_DIR / project_name
+            if creds_dir.exists():
+                shutil.rmtree(creds_dir)
+
+            return True
+
+        except Exception as e:
+            import logging
+            logging.error(f"Ошибка удаления проекта {project_name}: {e}")
+            return False

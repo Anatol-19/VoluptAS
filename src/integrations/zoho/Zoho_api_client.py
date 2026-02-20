@@ -41,10 +41,10 @@ class ZohoAPI:
             env_path = os.path.join(os.path.dirname(__file__), "config_zoho.env")
 
         if not os.path.exists(env_path):
+            example_path = Config.get_credentials_example_path('zoho.env.example')
             raise FileNotFoundError(
-                f"Файл конфигурации Zoho не найден. Ожидается:\n"
-                f"  - {os.path.join(project_root, 'credentials', 'zoho.env')}\n"
-                f"  - или {os.path.join(os.path.dirname(__file__), 'config_zoho.env')}"
+                f"Файл конфигурации Zoho не найден: {env_path}\n"
+                f"Создайте файл на основе примера: {example_path}"
             )
 
         load_dotenv(env_path)  # Загружаем переменные из zoho.env
@@ -209,6 +209,9 @@ class ZohoAPI:
         :param params: Параметры запроса.
         :return dict | None: Ответ API в формате JSON или None в случае ошибки.
         """
+        import logging
+        log_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "logs", "voluptas.log"))
+        logging.basicConfig(filename=log_path, level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
         try:
             headers = {"Authorization": f"Zoho-oauthtoken {self.access_token}"}
             response = self.session.get(url, headers=headers, params=params)
@@ -224,12 +227,30 @@ class ZohoAPI:
                 response = self.session.get(url, headers=headers, params=params)
 
             if response.status_code == 403:
-                print(f"❌ Ошибка доступа: {response.status_code}, {response.text}")
+                error_text = response.text
+                print(f"❌ Ошибка доступа: {response.status_code}, {error_text}")
+                logging.error(f"Zoho 403 Forbidden: {error_text}")
+                # Диагностика скопов
+                env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "credentials", "zoho.env"))
+                print(f"Используемый файл скопов: {env_path}")
+                try:
+                    with open(env_path, "r", encoding="utf-8") as f:
+                        env_lines = f.readlines()
+                    scopes = [line for line in env_lines if "SCOPE" in line or "scope" in line]
+                    print("Скопы в zoho.env:")
+                    for s in scopes:
+                        print(f"  {s.strip()}")
+                except Exception as e:
+                    print(f"Не удалось прочитать zoho.env: {e}")
+                print("Рекомендуемые скопы для импорта проектов:")
+                print("  ZohoProjects.projects.READ, ZohoProjects.tasks.READ, ZohoProjects.tasklists.READ, ZohoProjects.bugs.READ, ZohoProjects.users.READ, ZohoProjects.milestones.READ, ZohoProjects.forums.READ")
+                logging.error("Рекомендуемые скопы: ZohoProjects.projects.READ, ZohoProjects.tasks.READ, ZohoProjects.tasklists.READ, ZohoProjects.bugs.READ, ZohoProjects.users.READ, ZohoProjects.milestones.READ, ZohoProjects.forums.READ")
                 return None
 
             return self.handle_response(response)
         except requests.exceptions.RequestException as e:
             print(f"Ошибка при выполнении запроса: {e}")
+            logging.error(f"Ошибка при выполнении запроса: {e}")
             return None
 
     @staticmethod
@@ -258,11 +279,13 @@ class ZohoAPI:
         Получает список всех проектов в портале.
         :return list[dict]: Список проектов или пустой список в случае ошибки.
         """
-        # URL для получения списка проектов в портале
         url = f"{self.base_url}/projects/"
         response = self.send_request(url)
         if response is None:
-            print("❌ Не удалось получить список проектов. Проверьте права доступа.")
+            print("❌ Не удалось получить список проектов. Проверьте права доступа и скопы.")
+            print("Рекомендуемые скопы: ZohoProjects.projects.READ, ZohoProjects.tasks.READ, ZohoProjects.tasklists.READ, ZohoProjects.bugs.READ, ZohoProjects.users.READ, ZohoProjects.milestones.READ, ZohoProjects.forums.READ")
+            print("Проверьте, что скопы прописаны в credentials/zoho.env и в веб-консоли Zoho.")
+            print("Если ошибка повторяется — попробуйте обновить токены и проверить права пользователя.")
             return []
         return response.get("projects", [])
 
@@ -280,7 +303,7 @@ class ZohoAPI:
     ) -> list[dict]:
         """
         Получает сущности (задачи или баги) по фильтру.
-         :param entity_type: Тип сущности ('tasks', 'bugs', 'milestones', 'tasklists').
+        :param entity_type: Тип сущности ('tasks', 'bugs', 'milestones', 'tasklists').
         :param created_after: Дата создания (YYYY-MM-DD), начиная с которой сущности будут включены.
         :param created_before: Дата создания (YYYY-MM-DD), до которой сущности будут включены.
         :param closed_after: Дата закрытия (YYYY-MM-DD), начиная с которой сущности будут включены.
@@ -460,7 +483,7 @@ class ZohoAPI:
         :param description: Описание бага.
         :param assignee_id: ID ответственного (опционально).
         :param priority: Приоритет бага (опционально).
-        :return: dict | None: Ответ API с данными о созданном баге.
+        :return: Dict | None: Ответ API с данными о созданном баге.
         """
         url = f"{self.base_url}/projects/{self.project_id}/bugs/"
         data = {

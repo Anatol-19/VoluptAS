@@ -5,7 +5,7 @@
 Основана на реальной структуре из VoluptaS VRS.xlsx
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from src.db.base import Base
@@ -171,7 +171,7 @@ class FunctionalItem(Base):
         """
         return {
             "id": self.id,
-            "functional_id": self.functional_id,
+            "func_id": self.func_id,
             "alias_tag": self.alias_tag,
             "title": self.title,
             "type": self.type,

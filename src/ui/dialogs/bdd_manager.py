@@ -7,8 +7,15 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
 from pathlib import Path
 
-from src.db import SessionLocal
-from src.models import FunctionalItem
+Диалог для управления BDD Feature файлами
+"""
+
+from PyQt6.QtWidgets import (
+    QDialog, QVBoxLayout, QPushButton,
+    QLabel, QListWidget, QMessageBox,
+    QTextEdit
+)
+from src.config import Config
 from src.bdd.feature_generator import FeatureGenerator
 
 
@@ -17,8 +24,9 @@ class BDDFeatureManager(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.session = SessionLocal()
-        self.current_items = []
+        self.setWindowTitle("BDD Feature Manager")
+        self.setMinimumSize(600, 400)
+        self.config = Config()
         self.init_ui()
         self.load_data()
 

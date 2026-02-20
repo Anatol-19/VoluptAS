@@ -26,6 +26,7 @@ class MiniGraphWidget(QWidget):
         self.init_ui()
 
     def init_ui(self):
+        """Инициализация интерфейса"""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
 

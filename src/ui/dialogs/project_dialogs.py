@@ -1,20 +1,15 @@
 """
-Project Management Dialogs
+Project Dialogs
 
-- ProjectSelectorDialog: Выбор проекта
-- NewProjectDialog: Создание нового проекта
-- ProjectSettingsDialog: Настройки проекта
+Диалоги управления проектами
 """
 
-from PyQt6.QtWidgets import *
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont
-from pathlib import Path
-from typing import Optional
-import re
-import logging
-
-logger = logging.getLogger(__name__)
+from PyQt6.QtWidgets import (
+    QDialog, QVBoxLayout, QPushButton,
+    QLabel, QListWidget, QMessageBox,
+    QInputDialog
+)
+from src.config import Config
 
 
 class ProjectSelectorDialog(QDialog):
@@ -35,6 +30,7 @@ class ProjectSelectorDialog(QDialog):
         self.load_projects()
 
     def init_ui(self):
+        """Инициализация интерфейса"""
         layout = QVBoxLayout(self)
 
         # Заголовок
@@ -307,6 +303,29 @@ class ProjectSelectorDialog(QDialog):
             months = delta.days // 30
             return f"{months} мес назад"
 
+        # Кнопки управления
+        btn_new = QPushButton("Создать проект")
+        btn_new.clicked.connect(self.create_project)
+        layout.addWidget(btn_new)
+
+        btn_switch = QPushButton("Переключить")
+        btn_switch.clicked.connect(self.switch_project)
+        layout.addWidget(btn_switch)
+
+        btn_delete = QPushButton("Удалить")
+        btn_delete.clicked.connect(self.delete_project)
+        layout.addWidget(btn_delete)
+
+    def refresh_projects(self):
+        """Обновление списка проектов"""
+        self.list_widget.clear()
+        self.list_widget.addItems(Config.get_projects_list())
+
+        # Выделяем текущий проект
+        for i in range(self.list_widget.count()):
+            if self.list_widget.item(i).text() == Config.CURRENT_PROJECT:
+                self.list_widget.setCurrentRow(i)
+                break
 
 class NewProjectDialog(QDialog):
     """Диалог создания нового проекта"""

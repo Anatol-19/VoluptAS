@@ -20,6 +20,15 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction, QIcon
 from src.config import Config
+from src.ui.widgets.main_tabs_widget import MainTabsWidget
+from src.ui.dialogs.settings_dialog import SettingsDialog
+from src.ui.dialogs.report_generator_dialog import ReportGeneratorDialog
+from src.ui.dialogs.zoho_sync_dialog import ZohoSyncDialog
+from src.ui.dialogs.entity_editor import EntityEditorDialog  # Добавлен импорт
+from src.ui.dialogs.import_dialogs import ImportFromCsvDialog
+from src.ui.dialogs.export_dialogs import ExportToCsvDialog
+from src.ui.dialogs.project_dialogs import ProjectManagerDialog
+from src.ui.dialogs.bdd_manager import BDDManagerDialog
 
 
 class MainWindow(QMainWindow):
@@ -125,17 +134,13 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(placeholder_button)
 
     def _create_status_bar(self):
-        """
-        Создание статус-бара
-        """
+        """Создание статус-бара"""
         status_bar = QStatusBar()
         self.setStatusBar(status_bar)
         status_bar.showMessage("Готов к работе | Инкремент 0: Окружение настроено ✓")
 
     def _show_about(self):
-        """
-        Показать диалог "О программе"
-        """
+        """Показать диалог "О программе" """
         QMessageBox.about(
             self,
             "О программе VoluptAS",
@@ -173,3 +178,54 @@ class MainWindow(QMainWindow):
         """
         # В будущих инкрементах добавим проверку несохранённых изменений
         event.accept()
+
+    # === Обработчики меню ===
+    def open_settings(self):
+        """Открытие настроек проекта и интеграций"""
+        dlg = SettingsDialog(parent=self)
+        dlg.exec()
+
+    def open_zoho_sync(self):
+        """Синхронизация с Zoho"""
+        dlg = ZohoSyncDialog(None, self)
+        dlg.exec()
+
+    def open_report_generator(self):
+        """Открытие генератора отчетов"""
+        from src.db import SessionLocal
+        dlg = ReportGeneratorDialog(SessionLocal(), self)
+        dlg.exec()
+
+    # === Новые обработчики меню ===
+    def open_project_manager(self):
+        """Открытие менеджера проектов"""
+        dlg = ProjectManagerDialog(self)
+        if dlg.exec() == QDialog.DialogCode.Accepted:  # Проект был переключен
+            # Перезагружаем компоненты с новым проектом
+            self.main_tabs.refresh_all()
+            self.statusBar().showMessage(f"Текущий проект: {Config.CURRENT_PROJECT}")
+            self.setWindowTitle(f"{self.config.WINDOW_TITLE} - {Config.CURRENT_PROJECT}")
+
+    def open_entity_editor(self):
+        """Открытие редактора сущностей"""
+        dlg = EntityEditorDialog(self)
+        dlg.exec()
+
+    def open_import_dialog(self):
+        """Открытие диалога импорта"""
+        dlg = ImportFromCsvDialog(self)
+        dlg.exec()
+
+    def open_export_dialog(self):
+        """Открытие диалога экспорта"""
+        dlg = ExportToCsvDialog(self)
+        dlg.exec()
+
+    def open_bdd_manager(self):
+        """Открытие менеджера BDD"""
+        dlg = BDDManagerDialog(self)
+        dlg.exec()
+
+    def refresh_all(self):
+        """Обновление всех компонентов"""
+        self.main_tabs.refresh_all()

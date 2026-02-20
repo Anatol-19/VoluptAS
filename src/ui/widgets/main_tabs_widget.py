@@ -10,8 +10,7 @@
 """
 
 from PyQt6.QtWidgets import QWidget, QTabWidget, QVBoxLayout
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import pyqtSignal
 
 
 class MainTabsWidget(QWidget):
@@ -147,9 +146,15 @@ class MainTabsWidget(QWidget):
         pass
 
     def refresh_all(self):
-        """Обновление данных во всех табах"""
-        self.table_graph_tab.refresh()
-        self.full_graph_tab.refresh()
-        self.bdd_tab.refresh()
-        self.coverage_tab.refresh()
-        self.infra_tab.refresh()
+        """Обновление всех компонентов"""
+        # Перезагружаем данные во всех вкладках
+        for i in range(self.tab_widget.count()):
+            widget = self.tab_widget.widget(i)
+            if hasattr(widget, 'refresh'):
+                widget.refresh()
+            elif hasattr(widget, 'layout'):
+                # Для составных виджетов (как таблица + мини-граф)
+                for j in range(widget.layout().count()):
+                    child = widget.layout().itemAt(j).widget()
+                    if hasattr(child, 'refresh'):
+                        child.refresh()

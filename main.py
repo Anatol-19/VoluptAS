@@ -2,6 +2,11 @@ import sys
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+import os
+from PyQt6.QtWidgets import QApplication
+from src.ui.main_window import MainWindow
+from src.config import Config
+
 project_root = Path(__file__).resolve().parent
 sys.path.insert(0, str(project_root))
 
@@ -13,9 +18,8 @@ log_dir = project_root / 'logs'
 log_dir.mkdir(exist_ok=True)
 log_file = log_dir / 'voluptas.log'
 
-# Ротация: максимум 10 MB на файл, 5 backup файлов
 file_handler = RotatingFileHandler(
-    log_file, 
+    log_file,
     maxBytes=10*1024*1024,  # 10 MB
     backupCount=5,
     encoding='utf-8'
@@ -2610,7 +2614,7 @@ if __name__ == '__main__':
     # При мультипроектности инициализация БД происходит в MainWindow
     # или при создании нового проекта
     app = QApplication(sys.argv)
-    app.setStyle('Fusion')
-    window = MainWindow()
+    config = Config()
+    window = MainWindow(config)
     window.show()
     sys.exit(app.exec())
