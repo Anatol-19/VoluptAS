@@ -1182,6 +1182,10 @@ class MainWindow(QMainWindow):
         new_project_action.triggered.connect(self.create_new_project)
         file_menu.addAction(new_project_action)
         
+        delete_project_action = QAction('🗑️ Удалить проект...', self)
+        delete_project_action.triggered.connect(self.delete_project)
+        file_menu.addAction(delete_project_action)
+
         project_settings_action = QAction('⚙️ Настройки проекта...', self)
         project_settings_action.triggered.connect(self.open_project_settings)
         file_menu.addAction(project_settings_action)
@@ -2408,7 +2412,7 @@ class MainWindow(QMainWindow):
     def create_new_project(self):
         """Создание нового проекта"""
         from src.ui.dialogs.project_dialogs import NewProjectDialog
-        
+
         dialog = NewProjectDialog(self.project_manager, self)
         if dialog.exec() and dialog.created_project_id:
             # Спрашиваем, переключиться на новый проект?
@@ -2417,16 +2421,16 @@ class MainWindow(QMainWindow):
                 f'Проект создан. Переключиться на него?',
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            
+
             if reply == QMessageBox.StandardButton.Yes:
                 # Закрываем текущую сессию
                 if self.session:
                     self.session.close()
-                
+
                 # Переключаемся
                 self.project_manager.switch_project(dialog.created_project_id)
                 new_project = self.project_manager.get_current_project()
-                
+
                 if self.db_manager.connect_to_database(new_project.database_path):
                     self.ensure_database_initialized()
                     self.session = self.db_manager.get_session()
@@ -2434,6 +2438,62 @@ class MainWindow(QMainWindow):
                     self.update_window_title()
                     self.populate_project_combo()  # Обновляем combobox
                     self.statusBar().showMessage(f'✅ Работаем в проекте: {new_project.name}')
+    
+    def delete_project(self):
+        """Удаление проекта"""
+        current_project = self.project_manager.get_current_project()
+        if not current_project:
+            QMessageBox.warning(self, 'Ошибка', 'Нет активного проекта')
+            return
+        
+        # Предупреждение
+        reply = QMessageBox.warning(
+            self,
+            '⚠️ Удаление проекта',
+            f'Вы уверены что хотите удалить проект "{current_project.name}"?\n\n'
+            f'🗑️ Будет удалена папка: {Path(current_project.database_path).parent}\n'
+            f'🗑️ Все данные будут потеряны!\n\n'
+            f'Это действие НЕОБРАТИМО!',
+            QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Yes,
+            QMessageBox.StandardButton.Cancel
+        )
+        
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        
+        # Нужно переключиться на другой проект перед удалением
+        from src.ui.dialogs.project_dialogs import ProjectSelectorDialog
+        
+        dialog = ProjectSelectorDialog(self.project_manager, self)
+        dialog.setWindowTitle('Выберите проект для переключения')
+        
+        if not dialog.exec() or not dialog.selected_project_id:
+            QMessageBox.warning(self, 'Отменено', 'Удаление отменено')
+            return
+        
+        # Переключаемся на другой проект
+        self.project_manager.switch_project(dialog.selected_project_id)
+        new_project = self.project_manager.get_current_project()
+        
+        # Закрываем текущую сессию
+        if self.session:
+            self.session.close()
+        
+        # Переподключаемся к новой БД
+        if self.db_manager.connect_to_database(new_project.database_path):
+            self.ensure_database_initialized()
+            self.session = self.db_manager.get_session()
+            
+            # Удаляем старый проект
+            try:
+                self.project_manager.delete_project(current_project.id)
+                self.load_data()
+                self.update_window_title()
+                self.populate_project_combo()
+                self.statusBar().showMessage(f'🗑️ Проект "{current_project.name}" удалён')
+                QMessageBox.information(self, 'Успех', f'✅ Проект "{current_project.name}" удалён')
+            except Exception as e:
+                QMessageBox.critical(self, 'Ошибка', f'Не удалось удалить проект:\n{e}')
     
     def open_project_settings(self):
         """Настройки текущего проекта"""
