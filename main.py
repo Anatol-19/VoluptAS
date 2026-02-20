@@ -1783,6 +1783,7 @@ class MainWindow(QMainWindow):
             self.mini_graph.clear_graph()
     
     def filter_table(self):
+        """Фильтрация таблицы — ВСЕГДА из всех элементов"""
         search_text = self.search_input.text().lower()
         type_filter = self.type_filter.currentText()
         module_filter = self.module_filter.currentText()
@@ -1790,13 +1791,11 @@ class MainWindow(QMainWindow):
         segment_filter = self.segment_filter.currentText()
         qa_filter = self.qa_filter.currentText()
         dev_filter = self.dev_filter.currentText()
-        
+
+        # Фильтруем ВСЕ строки, а не только видимые
         for row in range(self.table.rowCount()):
-            if self.table.isRowHidden(row):
-                continue
-            
             show = True
-            
+
             # Текстовый поиск
             if search_text:
                 match = any(
@@ -1804,37 +1803,37 @@ class MainWindow(QMainWindow):
                     for col in range(self.table.columnCount())
                 )
                 show = show and match
-            
+
             # Фильтр по Type
             if type_filter and show:
                 type_cell = self.table.item(row, 3)
                 show = show and (type_cell and type_cell.text() == type_filter)
-            
+
             # Фильтр по Module
             if module_filter and show:
                 module_cell = self.table.item(row, 4)
                 show = show and (module_cell and module_cell.text() == module_filter)
-            
+
             # Фильтр по Epic
             if epic_filter and show:
                 epic_cell = self.table.item(row, 5)
                 show = show and (epic_cell and epic_cell.text() == epic_filter)
-            
+
             # Фильтр по Segment
             if segment_filter and show:
                 segment_cell = self.table.item(row, 9)  # Изменено: 8 → 9
                 show = show and (segment_cell and segment_cell.text() == segment_filter)
-            
+
             # Фильтр по QA
             if qa_filter and show:
                 qa_cell = self.table.item(row, 7)  # Изменено: 6 → 7
                 show = show and (qa_cell and qa_cell.text() == qa_filter)
-            
+
             # Фильтр по Dev
             if dev_filter and show:
                 dev_cell = self.table.item(row, 8)  # Изменено: 7 → 8
                 show = show and (dev_cell and dev_cell.text() == dev_filter)
-            
+
             self.table.setRowHidden(row, not show)
     
     def add_item(self):
