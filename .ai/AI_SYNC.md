@@ -42,16 +42,46 @@
 **Исполнитель:** GitHub Copilot  
 **Промт:** См. `.ai/PLANS/PLAN_002_GIT_SYNC.md`
 
-### 📋 ПЛАН (Backlog)
+### 📋 ПЛАН (Backlog) — COMPREHENSIVE
 
-| ID | Задача | SP | Приоритет | Статус | Исполнитель |
-|----|--------|----|-----------|--------|-------------|
-| **Q-01** | Qase Integration — API client | 5 | 🔴 HIGH | ⏸️ **PLAN APPROVED** | Copilot |
-| **UI-01** | PyQt-Fluent-Widgets installation | 1 | 🔴 HIGH | ⏸️ BACKLOG | Copilot |
-| **UI-02** | Apply Fluent styles to buttons | 1 | 🔴 HIGH | ⏸️ BACKLOG | Copilot |
-| **UI-03** | Apply QDarkStyleSheet theme | 1 | 🔴 HIGH | ⏸️ BACKLOG | Copilot |
-| **SB-01** | Sandbox Protection (read-only) | 3 | 🟡 MEDIUM | ⏸️ BACKLOG | Copilot |
-| **SD-01** | Safe Delete (soft delete + trash) | 5 | 🔴 HIGH | ⏸️ BACKLOG | Copilot |
+| Этап | ID | Задача | SP | Приоритет | Статус | Файл |
+|------|----|--------|----|-----------|--------|------|
+| **0** | G-04 | Git Sync (diverged fix) | 1 | 🔴 P0 | ✅ **DONE** | `.ai/PLANS/PLAN_002_GIT_SYNC.md` |
+| **1** | CQ-01 | Code Quality (flake8, black) | 3 | 🔴 P1 | 🟡 **IN PROGRESS** | `.ai/PLANS/PLAN_003_CODE_QUALITY.md` |
+| **2** | G-05 | Graph N:M relations | 3 | 🔴 P0 | ⏸️ BACKLOG | `.ai/PLANS/PLAN_004_GRAPH_ZOHO.md` |
+| **2** | Z-02 | Zoho users sync | 1 | 🟡 P1 | ⏸️ BACKLOG | `.ai/PLANS/PLAN_004_GRAPH_ZOHO.md` |
+| **2** | Z-03 | Zoho defects sync | 1 | 🟡 P1 | ⏸️ BACKLOG | `.ai/PLANS/PLAN_004_GRAPH_ZOHO.md` |
+| **3** | T-01 | Comprehensive tests | 2 | 🔴 P1 | ⏸️ BACKLOG | `.ai/PLANS/PLAN_005_TESTS.md` |
+| **4** | D-03 | Documentation update | 1 | 🟢 P2 | ⏸️ BACKLOG | `.ai/PLANS/PLAN_006_DOCS.md` |
+| **UI** | UI-01 | PyQt-Fluent-Widgets | 1 | 🔴 P1 | ⏸️ BACKLOG | — |
+| **SB** | SB-01 | Sandbox Protection | 3 | 🟡 P2 | ⏸️ BACKLOG | — |
+| **SD** | SD-01 | Safe Delete (soft delete) | 5 | 🔴 P1 | ⏸️ BACKLOG | — |
+
+**Всего:** 12 SP (Этапы 0-4) + 9 SP (UI/SB/SD) = **21 SP**
+
+---
+
+## 📚 ДОКУМЕНТАЦИЯ
+
+### Планы
+
+| Файл | Описание | Статус |
+|------|----------|--------|
+| `.ai/COPILOT_MASTER_PLAN.md` | Сводный план всех этапов | ✅ ACTIVE |
+| `.ai/PLANS/PLAN_002_GIT_SYNC.md` | Этап 0: Git Sync | ✅ DONE |
+| `.ai/PLANS/PLAN_003_CODE_QUALITY.md` | Этап 1: Code Quality | 🟡 IN PROGRESS |
+| `.ai/PLANS/PLAN_004_GRAPH_ZOHO.md` | Этап 2: Graph + Zoho | ⏸️ DRAFT |
+| `.ai/PLANS/PLAN_005_TESTS.md` | Этап 3: Tests | ⏸️ DRAFT |
+| `.ai/PLANS/PLAN_006_DOCS.md` | Этап 4: Documentation | ⏸️ DRAFT |
+
+### Контекст
+
+| Файл | Назначение |
+|------|------------|
+| `.ai/CONTINUITY.md` | State для Qwen Code |
+| `.github/copilot-instructions.md` | Контекст для GitHub Copilot |
+| `.ai/AI_WORKFLOW.md` | Process: Plan → Execute |
+| `.ai/HANDOFF_TO_COPILOT.md` | Handoff документ |
 
 ---
 
