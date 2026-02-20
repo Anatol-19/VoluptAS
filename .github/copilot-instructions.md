@@ -1,7 +1,8 @@
 # GitHub Copilot Instructions — VoluptAS
 
-**Версия:** 1.0  
-**Дата:** 2026-02-19
+**Версия:** 1.1  
+**Дата:** 2026-02-20  
+**Статус:** v0.4 (Graph MVP + Project Deletion)
 
 ---
 
@@ -13,9 +14,10 @@
 - Декомпозиция функционала (Module → Epic → Feature → Story)
 - Управление покрытием (тест-кейсы, автотесты, документация)
 - RACI матрица (ответственные QA/Dev)
-- Граф связей
+- Граф связей (из атрибутов + Relation table)
 - BDD сценарии
 - Интеграции (Google Sheets, Zoho Projects, Qase)
+- Мультипроектность (создание/удаление проектов)
 
 ---
 
@@ -42,23 +44,33 @@ VoluptAS/
 ├── requirements.txt           # Зависимости
 ├── start_voluptas.bat         # Лаунчер
 │
+├── .ai/                       # AI агенты (Qwen Code)
+│   ├── AGENTS.md              # Контракт для AI
+│   ├── CONTINUITY.md          # State tracking
+│   ├── AI_SYNC.md             # Синхронизация AI
+│   └── MEMORY_BANK.md         # Project knowledge
+│
+├── .github/                   # GitHub Copilot
+│   └── copilot-instructions.md
+│
 ├── src/
 │   ├── models/
 │   │   ├── functional_item.py # FunctionalItem модель
 │   │   ├── user.py            # User модель
-│   │   └── relation.py        # Relation модель (связи)
+│   │   ├── relation.py        # Relation модель (связи)
+│   │   └── project_config.py  # ProjectManager (создание/удаление)
 │   │
 │   ├── ui/
 │   │   ├── widgets/
-│   │   │   ├── full_graph_tab.py      # Вкладка "Граф"
+│   │   │   ├── full_graph_tab.py      # Вкладка "Граф" (из атрибутов)
 │   │   │   └── coverage_matrix_tab.py # Матрица покрытия
 │   │   ├── dialogs/
-│   │   │   ├── starter_wizard.py      # Мастер наполнения
-│   │   │   └── item_editor.py         # Редактор элементов
+│   │   │   ├── settings_dialog.py     # Настройки (Zoho, Google)
+│   │   │   └── starter_wizard.py      # Мастер наполнения
 │   │   └── mini_graph_widget.py       # Мини-граф справа
 │   │
 │   ├── utils/
-│   │   ├── graph_builder.py           # Построение графа
+│   │   ├── graph_builder.py           # Построение графа (NEW)
 │   │   ├── funcid_generator.py        # Генерация FuncID
 │   │   └── migration.py               # Миграции БД
 │   │
@@ -72,30 +84,32 @@ VoluptAS/
 │
 ├── data/
 │   ├── projects/
-│   │   └── sandbox/                   # Sandbox проект
-│   │       └── sandbox.db
+│   │   ├── sandbox/                   # Sandbox проект
+│   │   └── default/                   # Default проект
 │   └── config/
 │       └── projects.json              # Конфиг проектов
 │
 └── docs/
     ├── TZ.md                          # Техническое задание
     ├── DEV_PLAN_v0.5.md               # План разработки
-    └── INTERFACE_GUIDE.md             # Гид по интерфейсу
+    ├── INTERFACE_GUIDE.md             # Гид по интерфейсу
+    └── COPILOT_SETUP.md               # Настройка Copilot
 ```
 
 ---
 
 ## 🔑 Ключевые принципы
 
-### 1. Связи из атрибутов
+### 1. Связи из атрибутов (v0.4)
 
-Связи **не хранятся** в отдельной таблице, а извлекаются из атрибутов:
+Связи **не хранятся** в отдельной таблице для графа, а извлекаются из атрибутов:
 - `parent_id` — явная связь parent-of
 - `module`, `epic`, `feature` — иерархические связи
+- `Relation` table — для related-to связей (опционально)
 
 ```python
 # graph_builder.py
-def build_graph_from_attributes(items):
+def build_graph_from_attributes(items, relations=None):
     for item in items:
         if item.parent_id:
             edges.append({'from': item.parent_id, 'to': item.id})
@@ -103,6 +117,9 @@ def build_graph_from_attributes(items):
             parent = find_parent_by_title(items, item.module, 'Module')
             if parent:
                 edges.append({'from': parent.id, 'to': item.id})
+    if relations:
+        for rel in relations:  # Relation table
+            edges.append({'from': rel.source_id, 'to': rel.target_id})
 ```
 
 ### 2. FuncID генерируется автоматически
@@ -122,11 +139,27 @@ def generate_funcid(item_type, title, module, epic, feature):
 - isCrit, isFocus — checkbox
 - Module, Epic, Feature — dropdown с созданием нового
 
-### 4. Sandbox проект
+### 4. Project Deletion (v0.4)
+
+```python
+# project_config.py
+def delete_project(self, project_id):
+    # Нельзя удалить последний проект
+    if len(self.projects) <= 1:
+        raise ValueError("Нельзя удалить последний проект!")
+    
+    # Удалить папку проекта
+    shutil.rmtree(project_dir)
+    
+    # Удалить из списка
+    del self.projects[project_id]
+```
+
+### 5. Sandbox проект
 
 Учебный проект:
-- Нельзя удалить
-- Кнопка "Reset Sandbox" (в плане)
+- Нельзя удалить (в плане v0.5)
+- Кнопка "Reset Sandbox" (в плане v0.5)
 - Шаблон по умолчанию: VoluptAS Documentation
 
 ---
