@@ -2,7 +2,7 @@
 
 **Дата:** 2026-02-20  
 **Статус:** ACTIVE  
-**Версия:** 1.0
+**Версия:** 1.1
 
 ---
 
@@ -20,6 +20,7 @@
 | **P-02** | Project Deletion — UI menu | `main.py` | ✅ DONE | 2026-02-20 |
 | **F-01** | Filters — always filter from all items | `main.py` | ✅ DONE | 2026-02-20 |
 | **D-01** | Copilot Instructions | `.github/copilot-instructions.md` | ✅ DONE | 2026-02-20 |
+| **D-02** | AI Sync Documentation | `.ai/AI_SYNC.md`, `.ai/AI_WORKFLOW.md` | ✅ DONE | 2026-02-20 |
 
 ### 🔧 ИСПРАВЛЕНО (Fixed Bugs)
 
@@ -37,13 +38,33 @@
 
 ### 📋 ПЛАН (Backlog)
 
-| ID | Задача | SP | Приоритет | Статус |
-|----|--------|----|-----------|--------|
-| **UI-01** | PyQt-Fluent-Widgets installation | 1 | 🔴 HIGH | ⏸️ BACKLOG |
-| **UI-02** | Apply Fluent styles to buttons | 1 | 🔴 HIGH | ⏸️ BACKLOG |
-| **UI-03** | Apply QDarkStyleSheet theme | 1 | 🔴 HIGH | ⏸️ BACKLOG |
-| **SB-01** | Sandbox Protection (read-only) | 3 | 🟡 MEDIUM | ⏸️ BACKLOG |
-| **SD-01** | Safe Delete (soft delete + trash) | 5 | 🔴 HIGH | ⏸️ BACKLOG |
+| ID | Задача | SP | Приоритет | Статус | Исполнитель |
+|----|--------|----|-----------|--------|-------------|
+| **Q-01** | Qase Integration — API client | 5 | 🔴 HIGH | ⏸️ **PLAN APPROVED** | Copilot |
+| **UI-01** | PyQt-Fluent-Widgets installation | 1 | 🔴 HIGH | ⏸️ BACKLOG | Copilot |
+| **UI-02** | Apply Fluent styles to buttons | 1 | 🔴 HIGH | ⏸️ BACKLOG | Copilot |
+| **UI-03** | Apply QDarkStyleSheet theme | 1 | 🔴 HIGH | ⏸️ BACKLOG | Copilot |
+| **SB-01** | Sandbox Protection (read-only) | 3 | 🟡 MEDIUM | ⏸️ BACKLOG | Copilot |
+| **SD-01** | Safe Delete (soft delete + trash) | 5 | 🔴 HIGH | ⏸️ BACKLOG | Copilot |
+
+---
+
+## 🤖 AI WORKFLOW (NEW)
+
+**Режим:** Qwen (Plan) → Copilot (Execute)
+
+**Файлы:**
+- `.ai/AI_WORKFLOW.md` — описание процесса
+- `.ai/PLANS/` — планы задач
+- `.ai/PLANS/PLAN_001_QASE_INTEGRATION.md` — первый план
+
+**Процесс:**
+1. Qwen создаёт план → User утверждает
+2. Copilot реализует в IDE
+3. Qwen тестирует + документит
+4. Git commit
+
+**Следующий план:** PLAN_001: Qase Integration (ждёт "Погнали")
 
 ---
 
