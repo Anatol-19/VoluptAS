@@ -462,6 +462,7 @@ class SettingsDialog(QDialog):
             self.zoho_client_secret_edit.setText(creds.get("ZOHO_CLIENT_SECRET", ""))
             self.zoho_access_token_edit.setText(creds.get("ZOHO_ACCESS_TOKEN", ""))
             self.zoho_refresh_token_edit.setText(creds.get("ZOHO_REFRESH_TOKEN", ""))
+            self.zoho_auth_code_edit.setText(creds.get("ZOHO_AUTHORIZATION_CODE", ""))
             self.zoho_portal_edit.setText(creds.get("ZOHO_PORTAL_NAME", ""))
             self.zoho_project_id_edit.setText(creds.get("ZOHO_PROJECT_ID", ""))
 
@@ -718,6 +719,7 @@ class SettingsDialog(QDialog):
         """Сохранить настройки Zoho"""
         content = f"""ZOHO_CLIENT_ID={self.zoho_client_id_edit.text().strip()}
 ZOHO_CLIENT_SECRET={self.zoho_client_secret_edit.text().strip()}
+ZOHO_AUTHORIZATION_CODE={self.zoho_auth_code_edit.text().strip()}
 ZOHO_REFRESH_TOKEN={self.zoho_refresh_token_edit.text().strip()}
 ZOHO_ACCESS_TOKEN={self.zoho_access_token_edit.text().strip()}
 ZOHO_PORTAL_NAME={self.zoho_portal_edit.text().strip()}
