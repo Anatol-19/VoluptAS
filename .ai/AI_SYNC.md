@@ -36,10 +36,11 @@
 
 | ID | Задача | Файлы | Статус | Дата |
 |----|--------|-------|--------|------|
-| **Q-01** | Qase Integration — API client | `src/integrations/qase.py` (new) | 🟡 **IN PROGRESS** | 2026-02-20 |
+| **G-04** | Git Sync (diverged fix) | `.ai/PLANS/PLAN_002_GIT_SYNC.md` | 🟡 **IN PROGRESS** | 2026-02-20 |
+| **Q-01** | Qase Integration — API client | `src/integrations/qase.py` (new) | ✅ **DONE** | 2026-02-20 |
 
 **Исполнитель:** GitHub Copilot  
-**Промт:** См. `.ai/PLANS/PLAN_001_QASE_INTEGRATION.md`
+**Промт:** См. `.ai/PLANS/PLAN_002_GIT_SYNC.md`
 
 ### 📋 ПЛАН (Backlog)
 
