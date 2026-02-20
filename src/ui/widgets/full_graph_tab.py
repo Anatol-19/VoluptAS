@@ -43,18 +43,7 @@ class FullGraphTabWidget(QWidget):
 
         # Панель управления
         controls = QHBoxLayout()
-        controls.addWidget(QLabel("<b>Типы связей:</b>"))
-
-        # Чекбоксы фильтров
-        self.filter_checks = {}
-        for rel_type, config in RELATION_TYPES.items():
-            cb = QCheckBox(config["name"])
-            cb.setChecked(self.filters[rel_type])
-            cb.stateChanged.connect(
-                lambda state, rt=rel_type: self.toggle_filter(rt, state)
-            )
-            self.filter_checks[rel_type] = cb
-            controls.addWidget(cb)
+        controls.addWidget(QLabel("<b>Граф связей</b>"))
 
         controls.addStretch()
 
