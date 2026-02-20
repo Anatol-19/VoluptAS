@@ -1305,7 +1305,8 @@ class MainWindow(QMainWindow):
         sync_google_action = QAction('Google', self)
         sync_menu.addAction(sync_google_action)
         
-        sync_qase_action = QAction('Qase', self)
+        sync_qase_action = QAction('🧪 Qase.io', self)
+        sync_qase_action.triggered.connect(self.open_qase_sync_dialog)
         sync_menu.addAction(sync_qase_action)
         
         # Меню "Настройки"
@@ -2304,6 +2305,15 @@ class MainWindow(QMainWindow):
             # После успешной синхронизации можно обновить данные
             self.statusBar().showMessage('✅ Задачи Zoho синхронизированы')
     
+    def open_qase_sync_dialog(self):
+        """Открыть диалог синхронизации Qase.io"""
+        from src.ui.dialogs.qase_sync_dialog import QaseSyncDialog
+
+        dialog = QaseSyncDialog(self.session, self)
+        if dialog.exec():
+            # После успешной синхронизации можно обновить данные
+            self.statusBar().showMessage('✅ Тест-кейсы Qase синхронизированы')
+
     def ensure_database_initialized(self):
         """Проверка и инициализация БД если нужно"""
         from sqlalchemy import inspect

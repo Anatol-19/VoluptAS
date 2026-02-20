@@ -626,6 +626,57 @@ class SettingsDialog(QDialog):
         if project_id:
             self.zoho_project_id_edit.setText(str(project_id))
 
+    def load_all_settings(self):
+        """Загрузить все сохранённые настройки"""
+        self.load_zoho_settings()
+        self.load_google_settings()
+        self.load_qase_settings()
+
+    def load_zoho_settings(self):
+        """Загрузить настройки Zoho из zoho.env"""
+        try:
+            if self.zoho_env_path.exists():
+                from dotenv import dotenv_values
+                env_vars = dotenv_values(self.zoho_env_path)
+
+                self.zoho_client_id_edit.setText(env_vars.get("ZOHO_CLIENT_ID", ""))
+                self.zoho_client_secret_edit.setText(env_vars.get("ZOHO_CLIENT_SECRET", ""))
+                self.zoho_auth_code_edit.setText(env_vars.get("ZOHO_AUTHORIZATION_CODE", ""))
+                self.zoho_refresh_token_edit.setText(env_vars.get("ZOHO_REFRESH_TOKEN", ""))
+                self.zoho_access_token_edit.setText(env_vars.get("ZOHO_ACCESS_TOKEN", ""))
+                self.zoho_portal_edit.setText(env_vars.get("ZOHO_PORTAL_NAME", ""))
+                self.zoho_project_id_edit.setText(env_vars.get("ZOHO_PROJECT_ID", ""))
+
+                region = env_vars.get("ZOHO_REGION", "com")
+                index = self.zoho_region_combo.findText(region)
+                if index >= 0:
+                    self.zoho_region_combo.setCurrentIndex(index)
+        except Exception as e:
+            logging.warning(f"Не удалось загрузить Zoho settings: {e}")
+
+    def load_google_settings(self):
+        """Загрузить настройки Google из google_credentials.json"""
+        try:
+            if self.google_json_path.exists():
+                with open(self.google_json_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    self.google_json_edit.setPlainText(content)
+        except Exception as e:
+            logging.warning(f"Не удалось загрузить Google settings: {e}")
+
+    def load_qase_settings(self):
+        """Загрузить настройки Qase из qase.env"""
+        try:
+            if self.qase_env_path.exists():
+                from dotenv import dotenv_values
+                env_vars = dotenv_values(self.qase_env_path)
+
+                self.qase_token_edit.setText(env_vars.get("QASE_API_TOKEN", ""))
+                self.qase_project_edit.setText(env_vars.get("QASE_PROJECT_CODE", ""))
+                self.qase_url_edit.setText(env_vars.get("QASE_BASE_URL", "https://api.qase.io/v1"))
+        except Exception as e:
+            logging.warning(f"Не удалось загрузить Qase settings: {e}")
+
     def validate_google_json(self):
         """Проверить валидность Google JSON"""
         try:
@@ -658,33 +709,53 @@ class SettingsDialog(QDialog):
             QMessageBox.critical(self, "Ошибка", f"Невалидный JSON:\n{e}")
 
     def test_qase_connection(self):
-        """Проверить подключение к Qase.io"""
+        """Проверить подключение к Qase.io с использованием QaseClient"""
         token = self.qase_token_edit.text().strip()
         project_code = self.qase_project_edit.text().strip()
-        base_url = self.qase_url_edit.text().strip()
 
         if not token or not project_code:
             QMessageBox.warning(self, "Ошибка", "Заполните API Token и Project Code!")
             return
 
         try:
-            import requests
+            from src.integrations.qase import QaseClient
 
-            url = f"{base_url}/project/{project_code}"
-            headers = {"Token": token}
+            client = QaseClient(api_token=token, project_code=project_code)
 
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
+            # Проверить подключение
+            if client.check_connection():
+                # Получить информацию о проекте
+                projects = client.get_projects()
+                current_project = next(
+                    (p for p in projects if p.get("code") == project_code),
+                    None
+                )
 
-            project_data = response.json().get("result", {})
-            QMessageBox.information(
-                self,
-                "Успех",
-                f"✅ Подключение успешно!\n\n"
-                f'Project: {project_data.get("title", "N/A")}\n'
-                f'Code: {project_data.get("code", "N/A")}',
-            )
+                if current_project:
+                    QMessageBox.information(
+                        self,
+                        "✅ Успех",
+                        f"Подключение успешно!\n\n"
+                        f'Project: {current_project.get("title", "N/A")}\n'
+                        f'Code: {current_project.get("code", "N/A")}'
+                    )
+                else:
+                    QMessageBox.warning(
+                        self,
+                        "⚠️ Внимание",
+                        f"Подключение работает, но проект '{project_code}' не найден в вашем аккаунте.\n"
+                        f"Проверьте Project Code."
+                    )
+            else:
+                QMessageBox.critical(
+                    self,
+                    "❌ Ошибка",
+                    "Не удалось подключиться к Qase.io.\n"
+                    "Проверьте API Token и интернет соединение."
+                )
 
+        except ValueError as e:
+            QMessageBox.critical(self, "Ошибка", f"Неверные параметры:\n{e}")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось подключиться:\n{e}")
 
