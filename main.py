@@ -1106,14 +1106,22 @@ class MainWindow(QMainWindow):
         bdd_manager_action = QAction('🧑‍💻 BDD Feature Manager', self)
         bdd_manager_action.triggered.connect(self.open_bdd_manager)
         tools_menu.addAction(bdd_manager_action)
-        
+
         generate_bdd_action = QAction('🛠️ Генерация BDD Features', self)
         generate_bdd_action.setShortcut('Ctrl+B')
         generate_bdd_action.triggered.connect(self.generate_bdd_features)
         tools_menu.addAction(generate_bdd_action)
-        
+
         tools_menu.addSeparator()
         
+        # Стартовый помощник (Starter Wizard)
+        starter_wizard_action = QAction('🚀 Помощник по наполнению базы', self)
+        starter_wizard_action.setShortcut('Ctrl+Shift+S')
+        starter_wizard_action.triggered.connect(self.show_starter_wizard)
+        tools_menu.addAction(starter_wizard_action)
+
+        tools_menu.addSeparator()
+
         # Шаблоны отчётов
         report_templates_action = QAction('📋 Шаблоны отчётов', self)
         report_templates_action.triggered.connect(self.open_report_templates)
