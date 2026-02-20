@@ -810,10 +810,14 @@ class EntityEditorWindow(QMainWindow):
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels(['Functional ID', 'Title', 'Type', 'Module', 'Epic', 'Crit', 'Focus'])
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.DoubleClicked)  # Изменено: редактирование по двойному клику
         self.table.doubleClicked.connect(self.edit_item)
-        layout.addWidget(self.table)
         
+        # Inline делегаты (после load_data будет настроено)
+        self.inline_delegates = {}
+        
+        layout.addWidget(self.table)
+
         self.statusBar().showMessage('Готов')
     
     def load_data(self):
@@ -821,7 +825,50 @@ class EntityEditorWindow(QMainWindow):
         self.current_items = self.session.query(FunctionalItem).order_by(FunctionalItem.type, FunctionalItem.functional_id).all()
         self.populate_filters()
         self.filter_by_type(self.current_filter_type)
+        self.setup_inline_editing()  # Настройка inline делегатов
         self.statusBar().showMessage(f'✅ Загружено: {len(self.current_items)} записей')
+    
+    def setup_inline_editing(self):
+        """Настройка inline редактирования для таблицы"""
+        from src.ui.delegates.inline_editors import InlineEditDelegate, InlineSegmentDelegate, InlineCheckDelegate, InlineUserDelegate
+        
+        # Получаем список пользователей для ComboBox
+        users = [u.name for u in self.session.query(User).filter_by(is_active=1).order_by(User.name).all()]
+        
+        # Создаём делегаты
+        # Col 1: Title (inline edit)
+        self.table.setItemDelegateForColumn(1, InlineEditDelegate(self, on_commit=self.on_inline_edit))
+        
+        # Col 5: isCrit (checkbox)
+        self.table.setItemDelegateForColumn(5, InlineCheckDelegate(self, on_commit=self.on_inline_edit))
+        
+        # Col 6: isFocus (checkbox)
+        self.table.setItemDelegateForColumn(6, InlineCheckDelegate(self, on_commit=self.on_inline_edit))
+    
+    def on_inline_edit(self, row, col, value):
+        """Обработка inline редактирования"""
+        from src.models import FunctionalItem
+        
+        if row >= len(self.current_items):
+            return
+        
+        item = self.current_items[row]
+        
+        try:
+            # Определяем поле по колонке
+            if col == 1:  # Title
+                item.title = value
+            elif col == 5:  # isCrit
+                item.is_crit = value
+            elif col == 6:  # isFocus
+                item.is_focus = value
+            
+            self.session.commit()
+            self.statusBar().showMessage(f'✅ Сохранено: {item.functional_id}')
+            
+        except Exception as e:
+            self.session.rollback()
+            QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
     
     def populate_filters(self):
         """Заполнить фильтры уникальными значениями"""
@@ -1517,19 +1564,38 @@ class MainWindow(QMainWindow):
         """Обработка изменения ячейки в таблице"""
         row = item.row()
         col = item.column()
-        
-        # Редактируемые колонки: Alias(1), Title(2), Segment(8)
-        if col not in [1, 2, 8]:
+
+        # Редактируемые колонки: Alias(1), Title(2), Segment(8), isCrit(10), isFocus(11)
+        if col not in [1, 2, 8, 10, 11]:
             return
-        
+
         functional_id = self.table.item(row, 0).text()
         db_item = self.session.query(FunctionalItem).filter_by(functional_id=functional_id).first()
-        
+
         if not db_item:
             return
+
+        # Обработка checkbox (isCrit, isFocus)
+        if col in [10, 11]:
+            # Для checkbox используем текст "✓" или пустую строку
+            new_value = 1 if item.text() == '✓' else 0
+            
+            try:
+                if col == 10:  # isCrit
+                    db_item.is_crit = new_value
+                elif col == 11:  # isFocus
+                    db_item.is_focus = new_value
+                
+                self.session.commit()
+                self.statusBar().showMessage(f'✅ Сохранено: {functional_id}')
+            except Exception as e:
+                self.session.rollback()
+                QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
+            return
         
+        # Обработка текстовых полей
         new_value = item.text().strip()
-        
+
         try:
             if col == 1:  # Alias
                 db_item.alias_tag = new_value if new_value else None
@@ -1541,7 +1607,7 @@ class MainWindow(QMainWindow):
                 db_item.title = new_value
             elif col == 8:  # Segment
                 db_item.segment = new_value if new_value else None
-            
+
             self.session.commit()
             self.statusBar().showMessage(f'✅ Сохранено: {functional_id}')
         except Exception as e:
