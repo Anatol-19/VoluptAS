@@ -24,7 +24,8 @@ def import_from_csv(csv_path, session=None):
     """
     close_session = False
     if session is None:
-        session = SessionLocal()
+        from src.db import SessionLocal
+        session = SessionLocal()  # Вызываем функцию для получения сессии
         close_session = True
     
     print(f'📂 Читаем: {csv_path}')
@@ -78,9 +79,28 @@ def import_from_csv(csv_path, session=None):
                 functional_id = (row.get('Functional ID', '') or row.get('FuncID', '')).strip()
                 title = row.get('Title', '').strip()
                 
+                # Поддержка вариантов написания Responsible
+                responsible_qa = (
+                    row.get('Responsible (QA)', '') or 
+                    row.get('ResponsibleQA', '') or 
+                    row.get('QA', '')
+                ).strip()
+                
+                responsible_dev = (
+                    row.get('Responsible (Dev)', '') or 
+                    row.get('ResponsibleDev', '') or 
+                    row.get('Dev', '')
+                ).strip()
+                
+                accountable = (
+                    row.get('Accountable', '') or 
+                    row.get('Resp (Accountable)', '')
+                ).strip()
+
                 # Пропускаем пустые строки
                 if not functional_id or not title:
                     stats['skipped_empty'] += 1
+                    print(f'  ⚠️  Пропущено (пустое): строка {stats["total"]} - нет FuncID или Title')
                     continue
                 
                 # Проверяем дубликаты
@@ -90,12 +110,36 @@ def import_from_csv(csv_path, session=None):
                     continue
                 
                 try:
+                    # Определяем Type из Title если не указан
+                    item_type = row.get('Type', '').strip()
+                    if not item_type:
+                        # Авто-определение из Title
+                        title_upper = title.upper()
+                        if '[MODULE]' in title_upper:
+                            item_type = 'Module'
+                        elif '[EPIC]' in title_upper:
+                            item_type = 'Epic'
+                        elif '[FEATURE]' in title_upper:
+                            item_type = 'Feature'
+                        elif '[STORY]' in title_upper:
+                            item_type = 'Story'
+                        elif '[PAGE]' in title_upper:
+                            item_type = 'Page'
+                        elif '[ELEMENT]' in title_upper or '[ELEMENT]' in title_upper:
+                            item_type = 'Element'
+                        elif 'SERVICE:' in title_upper:
+                            item_type = 'Service'
+                        else:
+                            print(f'  ⚠️  Пропущено (нет Type): строка {stats["total"]} - {functional_id}')
+                            stats['skipped_empty'] += 1
+                            continue
+                    
                     # Создаём элемент со ВСЕМИ полями
                     item = FunctionalItem(
                         functional_id=functional_id,
                         alias_tag=row.get('Alias', '').strip() or row.get('Alias Tag', '').strip() or None,
                         title=title,
-                        type=row.get('Type', '').strip() or None,
+                        type=item_type,
                         module=row.get('Module', '').strip() or None,
                         epic=row.get('Epic', '').strip() or None,
                         feature=row.get('Feature', '').strip() or None,
@@ -118,25 +162,24 @@ def import_from_csv(csv_path, session=None):
                         external_services=row.get('External Services', '').strip() or None,
                     )
                     
-                    # Ответственные (поддержка обоих форматов)
-                    qa_name = (row.get('Responsible (QA)', '') or row.get('QA', '')).strip()
-                    dev_name = (row.get('Responsible (Dev)', '') or row.get('Dev', '')).strip()
-                    accountable_name = row.get('Accountable', '').strip()
-                    
-                    if qa_name:
-                        qa_user = get_or_create_user(qa_name)
+                    # Ответственные (используем новые переменные с поддержкой вариантов)
+                    if responsible_qa:
+                        qa_user = get_or_create_user(responsible_qa)
                         if qa_user:
                             item.responsible_qa_id = qa_user.id
-                    
-                    if dev_name:
-                        dev_user = get_or_create_user(dev_name)
+                            print(f'    👤 QA: {responsible_qa}')
+
+                    if responsible_dev:
+                        dev_user = get_or_create_user(responsible_dev)
                         if dev_user:
                             item.responsible_dev_id = dev_user.id
-                    
-                    if accountable_name:
-                        accountable_user = get_or_create_user(accountable_name)
+                            print(f'    👤 Dev: {responsible_dev}')
+
+                    if accountable:
+                        accountable_user = get_or_create_user(accountable)
                         if accountable_user:
                             item.accountable_id = accountable_user.id
+                            print(f'    👤 Accountable: {accountable}')
                     
                     session.add(item)
                     session.commit()

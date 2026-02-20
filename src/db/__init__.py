@@ -2,10 +2,10 @@
 from .database_manager import DatabaseManager
 
 # Ленивая инициализация — сессия создаётся при первом обращении
-def _get_session_local():
-    return get_session_local()
+def SessionLocal():
+    """Создаёт новую сессию SQLAlchemy"""
+    return get_session_local()()  # Вызываем sessionmaker для получения сессии
 
-SessionLocal = _get_session_local
 engine = None  # Инициализируется при первом вызове get_engine()
 
 __all__ = ["engine", "SessionLocal", "Base", "get_db", "init_db", "DatabaseManager"]
