@@ -37,21 +37,22 @@ NODE_SIZES = {
 }
 
 
-def build_graph_from_attributes(items: List[FunctionalItem]) -> Tuple[List[Dict], List[Dict]]:
+def build_graph_from_attributes(items: List[FunctionalItem], relations: Optional[List] = None) -> Tuple[List[Dict], List[Dict]]:
     """
-    Построение графа из атрибутов элементов
-
+    Построение графа из атрибутов элементов + связей из БД
+    
     Args:
         items: Список элементов FunctionalItem
-
+        relations: Список связей Relation (опционально)
+    
     Returns:
         (nodes, edges) — списки узлов и рёбер
     """
     nodes = []
     edges = []
     
-    logger.info(f"Building graph from {len(items)} items")
-
+    logger.info(f"Building graph from {len(items)} items, {len(relations) if relations else 0} relations")
+    
     # Индекс для быстрого поиска
     items_by_id = {item.id: item for item in items}
     items_by_title_type = {}
@@ -70,7 +71,7 @@ def build_graph_from_attributes(items: List[FunctionalItem]) -> Tuple[List[Dict]
             'size': NODE_SIZES.get(item.type, 1000),
         })
 
-    # 2. Создаём рёбра из атрибутов
+    # 2. Создаём рёбра из атрибутов (иерархия)
     edges_created = 0
     for item in items:
         # parent_id — явная связь parent-of
@@ -118,6 +119,19 @@ def build_graph_from_attributes(items: List[FunctionalItem]) -> Tuple[List[Dict]
                     'weight': 0.95,
                 })
                 edges_created += 1
+    
+    # 3. Добавляем связи из БД (related-to, depends-on, etc.)
+    if relations:
+        for rel in relations:
+            if rel.active and rel.source_id in items_by_id and rel.target_id in items_by_id:
+                edges.append({
+                    'from': rel.source_id,
+                    'to': rel.target_id,
+                    'type': rel.type,
+                    'weight': rel.weight or 1.0,
+                })
+                edges_created += 1
+        logger.info(f"Added {len(relations)} relations from DB")
     
     logger.info(f"Graph built: {len(nodes)} nodes, {edges_created} edges")
 

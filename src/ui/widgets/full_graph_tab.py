@@ -10,7 +10,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
-    QCheckBox,
     QPushButton,
     QFileDialog,
     QMessageBox,
@@ -20,9 +19,12 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+import logging
 
-from src.models import FunctionalItem
+from src.models import FunctionalItem, Relation
 from src.utils.graph_builder import build_graph_from_attributes, NODE_COLORS
+
+logger = logging.getLogger(__name__)
 
 
 class FullGraphTabWidget(QWidget):
@@ -67,7 +69,7 @@ class FullGraphTabWidget(QWidget):
         pass  # Пока фильтры отключены
 
     def load_graph(self):
-        """Загрузить граф из БД — связи из атрибутов"""
+        """Загрузить граф из БД — связи из атрибутов + Relation таблица"""
         if not self.session:
             return
 
@@ -75,8 +77,13 @@ class FullGraphTabWidget(QWidget):
 
         items = self.session.query(FunctionalItem).all()
         
-        # Строим граф из атрибутов
-        nodes_data, edges_data = build_graph_from_attributes(items)
+        # Загружаем активные связи из БД
+        relations = self.session.query(Relation).filter_by(active=True).all()
+        
+        logger.info(f"Loading graph: {len(items)} items, {len(relations)} relations")
+        
+        # Строим граф из атрибутов + связей
+        nodes_data, edges_data = build_graph_from_attributes(items, relations)
         
         # Добавляем узлы
         for node in nodes_data:
