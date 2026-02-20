@@ -9,6 +9,9 @@ Graph Builder
 
 from typing import List, Dict, Tuple, Optional
 from src.models import FunctionalItem
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Цвета для типов элементов (Obsidian-style)
@@ -37,23 +40,25 @@ NODE_SIZES = {
 def build_graph_from_attributes(items: List[FunctionalItem]) -> Tuple[List[Dict], List[Dict]]:
     """
     Построение графа из атрибутов элементов
-    
+
     Args:
         items: Список элементов FunctionalItem
-    
+
     Returns:
         (nodes, edges) — списки узлов и рёбер
     """
     nodes = []
     edges = []
     
+    logger.info(f"Building graph from {len(items)} items")
+
     # Индекс для быстрого поиска
     items_by_id = {item.id: item for item in items}
     items_by_title_type = {}
     for item in items:
         key = (item.title.lower(), item.type)
         items_by_title_type[key] = item
-    
+
     # 1. Создаём узлы
     for item in items:
         nodes.append({
@@ -64,8 +69,9 @@ def build_graph_from_attributes(items: List[FunctionalItem]) -> Tuple[List[Dict]
             'color': NODE_COLORS.get(item.type, '#808080'),
             'size': NODE_SIZES.get(item.type, 1000),
         })
-    
+
     # 2. Создаём рёбра из атрибутов
+    edges_created = 0
     for item in items:
         # parent_id — явная связь parent-of
         if item.parent_id and item.parent_id in items_by_id:
@@ -75,7 +81,8 @@ def build_graph_from_attributes(items: List[FunctionalItem]) -> Tuple[List[Dict]
                 'type': 'parent-of',
                 'weight': 1.0,
             })
-        
+            edges_created += 1
+
         # module — связь module-of
         if item.module:
             parent = find_parent_by_title(items, item.module, 'Module')
@@ -86,7 +93,8 @@ def build_graph_from_attributes(items: List[FunctionalItem]) -> Tuple[List[Dict]
                     'type': 'module-of',
                     'weight': 0.8,
                 })
-        
+                edges_created += 1
+
         # epic — связь epic-of
         if item.epic:
             parent = find_parent_by_title(items, item.epic, 'Epic')
@@ -97,7 +105,8 @@ def build_graph_from_attributes(items: List[FunctionalItem]) -> Tuple[List[Dict]
                     'type': 'epic-of',
                     'weight': 0.9,
                 })
-        
+                edges_created += 1
+
         # feature — связь feature-of
         if item.feature:
             parent = find_parent_by_title(items, item.feature, 'Feature')
@@ -108,25 +117,21 @@ def build_graph_from_attributes(items: List[FunctionalItem]) -> Tuple[List[Dict]
                     'type': 'feature-of',
                     'weight': 0.95,
                 })
-        
-        # stories — JSON array или CSV, не используем для иерархии
-        # page — связь page-of (если есть поле)
-        if hasattr(item, 'page') and item.page:
-            parent = find_parent_by_title(items, item.page, 'Page')
-            if parent and parent.id != item.id:
-                edges.append({
-                    'from': parent.id,
-                    'to': item.id,
-                    'type': 'page-of',
-                    'weight': 0.95,
-                })
+                edges_created += 1
     
+    logger.info(f"Graph built: {len(nodes)} nodes, {edges_created} edges")
+
     return nodes, edges
 
 
 def find_parent_by_title(items: List[FunctionalItem], title: str, type_filter: str) -> Optional[FunctionalItem]:
     """
     Поиск родителя по названию и типу
+    
+    Поддерживает:
+    - Точное совпадение
+    - Частичное совпадение (без "[Module]:", "[Epic]:")
+    - Совпадение по functional_id
     
     Args:
         items: Список элементов
@@ -136,10 +141,35 @@ def find_parent_by_title(items: List[FunctionalItem], title: str, type_filter: s
     Returns:
         Элемент или None
     """
-    title_lower = title.lower()
+    title_lower = title.lower().strip()
+    
+    # Очищаем от префиксов типа "[Module]:", "[Epic]:"
+    title_clean = title_lower
+    for prefix in ['[module]:', '[epic]:', '[feature]:', '[story]:', '[page]:', '[element]:', '[service]:']:
+        title_clean = title_clean.replace(prefix, '').strip()
     
     for item in items:
-        if item.type == type_filter and item.title.lower() == title_lower:
+        if item.type != type_filter:
+            continue
+        
+        # 1. Точное совпадение title
+        if item.title.lower().strip() == title_lower:
+            return item
+        
+        # 2. Совпадение без префикса
+        item_title_clean = item.title.lower().strip()
+        for prefix in ['[module]:', '[epic]:', '[feature]:', '[story]:', '[page]:', '[element]:', '[service]:']:
+            item_title_clean = item_title_clean.replace(prefix, '').strip()
+        
+        if item_title_clean == title_clean:
+            return item
+        
+        # 3. Совпадение по functional_id (например, "FRONT" → "MOD:FRONT")
+        if item.functional_id.upper().startswith(title_clean.upper().replace(' ', '-').replace('_', '-')):
+            return item
+        
+        # 4. Содержит title (для частичных совпадений)
+        if title_clean in item_title_clean or item_title_clean in title_clean:
             return item
     
     return None
