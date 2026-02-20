@@ -76,33 +76,33 @@ class FullGraphTabWidget(QWidget):
         self.graph.clear()
 
         items = self.session.query(FunctionalItem).all()
-        
+
         # Загружаем активные связи из БД
         relations = self.session.query(Relation).filter_by(active=True).all()
-        
+
         logger.info(f"Loading graph: {len(items)} items, {len(relations)} relations")
-        
+
         # Строим граф из атрибутов + связей
         nodes_data, edges_data = build_graph_from_attributes(items, relations)
-        
+
         # Добавляем узлы
         for node in nodes_data:
             self.graph.add_node(
-                node['id'],
-                label=node['title'],
-                funcid=node['funcid'],
-                type=node['type'],
-                color=node['color'],
-                size=node['size'],
+                node["id"],
+                label=node["title"],
+                funcid=node["funcid"],
+                type=node["type"],
+                color=node["color"],
+                size=node["size"],
             )
-        
+
         # Добавляем рёбра
         for edge in edges_data:
             self.graph.add_edge(
-                edge['from'],
-                edge['to'],
-                type=edge['type'],
-                weight=edge['weight'],
+                edge["from"],
+                edge["to"],
+                type=edge["type"],
+                weight=edge["weight"],
             )
 
         self.refresh_graph()
@@ -112,7 +112,7 @@ class FullGraphTabWidget(QWidget):
         self.figure.clear()
         ax = self.figure.add_subplot(111, facecolor="#1e1e1e")
         ax.set_title("Граф связей (из атрибутов)", color="#ffffff", fontsize=14)
-        ax.axis('off')
+        ax.axis("off")
 
         if len(self.graph.nodes()) == 0:
             ax.text(
@@ -133,13 +133,16 @@ class FullGraphTabWidget(QWidget):
         # Рисуем узлы с цветами из graph_builder
         for node_type in NODE_COLORS.keys():
             nodes = [
-                n
-                for n, d in self.graph.nodes(data=True)
-                if d.get("type") == node_type
+                n for n, d in self.graph.nodes(data=True) if d.get("type") == node_type
             ]
             if nodes:
-                sizes = [self.graph.nodes[n].get('size', 1000) for n in nodes]
-                colors = [self.graph.nodes[n].get('color', NODE_COLORS.get(node_type, '#808080')) for n in nodes]
+                sizes = [self.graph.nodes[n].get("size", 1000) for n in nodes]
+                colors = [
+                    self.graph.nodes[n].get(
+                        "color", NODE_COLORS.get(node_type, "#808080")
+                    )
+                    for n in nodes
+                ]
                 nx.draw_networkx_nodes(
                     self.graph,
                     self.pos,
@@ -154,14 +157,14 @@ class FullGraphTabWidget(QWidget):
 
         # Рисуем рёбра
         edge_colors = {
-            'parent-of': '#ffffff',
-            'module-of': '#1E90FF',
-            'epic-of': '#32CD32',
-            'feature-of': '#FFA500',
-            'story-of': '#9370DB',
-            'page-of': '#FF69B4',
+            "parent-of": "#ffffff",
+            "module-of": "#1E90FF",
+            "epic-of": "#32CD32",
+            "feature-of": "#FFA500",
+            "story-of": "#9370DB",
+            "page-of": "#FF69B4",
         }
-        
+
         for rel_type, color in edge_colors.items():
             edges = [
                 (u, v)
@@ -178,15 +181,12 @@ class FullGraphTabWidget(QWidget):
                     alpha=0.6,
                     arrows=True,
                     arrowsize=20,
-                    arrowstyle='-|>',
+                    arrowstyle="-|>",
                     ax=ax,
                 )
 
         # Подписи узлов
-        labels = {
-            n: d.get('label', str(n))
-            for n, d in self.graph.nodes(data=True)
-        }
+        labels = {n: d.get("label", str(n)) for n, d in self.graph.nodes(data=True)}
         nx.draw_networkx_labels(
             self.graph,
             self.pos,

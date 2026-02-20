@@ -637,13 +637,22 @@ class SettingsDialog(QDialog):
         try:
             if self.zoho_env_path.exists():
                 from dotenv import dotenv_values
+
                 env_vars = dotenv_values(self.zoho_env_path)
 
                 self.zoho_client_id_edit.setText(env_vars.get("ZOHO_CLIENT_ID", ""))
-                self.zoho_client_secret_edit.setText(env_vars.get("ZOHO_CLIENT_SECRET", ""))
-                self.zoho_auth_code_edit.setText(env_vars.get("ZOHO_AUTHORIZATION_CODE", ""))
-                self.zoho_refresh_token_edit.setText(env_vars.get("ZOHO_REFRESH_TOKEN", ""))
-                self.zoho_access_token_edit.setText(env_vars.get("ZOHO_ACCESS_TOKEN", ""))
+                self.zoho_client_secret_edit.setText(
+                    env_vars.get("ZOHO_CLIENT_SECRET", "")
+                )
+                self.zoho_auth_code_edit.setText(
+                    env_vars.get("ZOHO_AUTHORIZATION_CODE", "")
+                )
+                self.zoho_refresh_token_edit.setText(
+                    env_vars.get("ZOHO_REFRESH_TOKEN", "")
+                )
+                self.zoho_access_token_edit.setText(
+                    env_vars.get("ZOHO_ACCESS_TOKEN", "")
+                )
                 self.zoho_portal_edit.setText(env_vars.get("ZOHO_PORTAL_NAME", ""))
                 self.zoho_project_id_edit.setText(env_vars.get("ZOHO_PROJECT_ID", ""))
 
@@ -669,11 +678,14 @@ class SettingsDialog(QDialog):
         try:
             if self.qase_env_path.exists():
                 from dotenv import dotenv_values
+
                 env_vars = dotenv_values(self.qase_env_path)
 
                 self.qase_token_edit.setText(env_vars.get("QASE_API_TOKEN", ""))
                 self.qase_project_edit.setText(env_vars.get("QASE_PROJECT_CODE", ""))
-                self.qase_url_edit.setText(env_vars.get("QASE_BASE_URL", "https://api.qase.io/v1"))
+                self.qase_url_edit.setText(
+                    env_vars.get("QASE_BASE_URL", "https://api.qase.io/v1")
+                )
         except Exception as e:
             logging.warning(f"Не удалось загрузить Qase settings: {e}")
 
@@ -727,8 +739,7 @@ class SettingsDialog(QDialog):
                 # Получить информацию о проекте
                 projects = client.get_projects()
                 current_project = next(
-                    (p for p in projects if p.get("code") == project_code),
-                    None
+                    (p for p in projects if p.get("code") == project_code), None
                 )
 
                 if current_project:
@@ -737,21 +748,21 @@ class SettingsDialog(QDialog):
                         "✅ Успех",
                         f"Подключение успешно!\n\n"
                         f'Project: {current_project.get("title", "N/A")}\n'
-                        f'Code: {current_project.get("code", "N/A")}'
+                        f'Code: {current_project.get("code", "N/A")}',
                     )
                 else:
                     QMessageBox.warning(
                         self,
                         "⚠️ Внимание",
                         f"Подключение работает, но проект '{project_code}' не найден в вашем аккаунте.\n"
-                        f"Проверьте Project Code."
+                        f"Проверьте Project Code.",
                     )
             else:
                 QMessageBox.critical(
                     self,
                     "❌ Ошибка",
                     "Не удалось подключиться к Qase.io.\n"
-                    "Проверьте API Token и интернет соединение."
+                    "Проверьте API Token и интернет соединение.",
                 )
 
         except ValueError as e:

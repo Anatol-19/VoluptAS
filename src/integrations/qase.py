@@ -33,10 +33,7 @@ class QaseClient:
         self.api_token = api_token
         self.project_code = project_code
         self.base_url = "https://api.qase.io/v1"
-        self.headers = {
-            "Token": self.api_token,
-            "Content-Type": "application/json"
-        }
+        self.headers = {"Token": self.api_token, "Content-Type": "application/json"}
 
         # Кэш для ответов (TTL: 1 час)
         self._cache = {}
@@ -78,9 +75,7 @@ class QaseClient:
                 return cached
 
             response = requests.get(
-                f"{self.base_url}/project",
-                headers=self.headers,
-                timeout=10
+                f"{self.base_url}/project", headers=self.headers, timeout=10
             )
             response.raise_for_status()
 
@@ -118,7 +113,7 @@ class QaseClient:
             response = requests.get(
                 f"{self.base_url}/suite/{project_code}",
                 headers=self.headers,
-                timeout=10
+                timeout=10,
             )
             response.raise_for_status()
 
@@ -133,9 +128,7 @@ class QaseClient:
             raise
 
     def get_cases(
-        self,
-        project_code: Optional[str] = None,
-        suite_id: Optional[int] = None
+        self, project_code: Optional[str] = None, suite_id: Optional[int] = None
     ) -> List[Dict]:
         """
         Получить список тест-кейсов
@@ -166,7 +159,7 @@ class QaseClient:
                 f"{self.base_url}/case/{project_code}",
                 headers=self.headers,
                 params=params,
-                timeout=10
+                timeout=10,
             )
             response.raise_for_status()
 
@@ -186,7 +179,7 @@ class QaseClient:
         title: str,
         project_code: Optional[str] = None,
         suite_id: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict:
         """
         Создать новый тест-кейс
@@ -215,7 +208,7 @@ class QaseClient:
                 f"{self.base_url}/case/{project_code}",
                 headers=self.headers,
                 json=data,
-                timeout=10
+                timeout=10,
             )
             response.raise_for_status()
 
@@ -228,10 +221,7 @@ class QaseClient:
             raise
 
     def update_case(
-        self,
-        case_id: int,
-        project_code: Optional[str] = None,
-        **kwargs
+        self, case_id: int, project_code: Optional[str] = None, **kwargs
     ) -> Dict:
         """
         Обновить тест-кейс
@@ -254,7 +244,7 @@ class QaseClient:
                 f"{self.base_url}/case/{project_code}/{case_id}",
                 headers=self.headers,
                 json=kwargs,
-                timeout=10
+                timeout=10,
             )
             response.raise_for_status()
 
@@ -266,11 +256,7 @@ class QaseClient:
             logger.error(f"Ошибка при обновлении кейса: {e}")
             raise
 
-    def delete_case(
-        self,
-        case_id: int,
-        project_code: Optional[str] = None
-    ) -> bool:
+    def delete_case(self, case_id: int, project_code: Optional[str] = None) -> bool:
         """
         Удалить тест-кейс
 
@@ -290,7 +276,7 @@ class QaseClient:
             response = requests.delete(
                 f"{self.base_url}/case/{project_code}/{case_id}",
                 headers=self.headers,
-                timeout=10
+                timeout=10,
             )
             response.raise_for_status()
 
@@ -310,9 +296,7 @@ class QaseClient:
         """
         try:
             response = requests.get(
-                f"{self.base_url}/project",
-                headers=self.headers,
-                timeout=5
+                f"{self.base_url}/project", headers=self.headers, timeout=5
             )
             if response.status_code == 200:
                 logger.info("✅ Qase API подключение успешно")
@@ -323,4 +307,3 @@ class QaseClient:
         except Exception as e:
             logger.error(f"❌ Ошибка подключения к Qase: {e}")
             return False
-

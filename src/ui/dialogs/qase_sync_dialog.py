@@ -7,10 +7,23 @@ Qase Sync Dialog - Диалог синхронизации с Qase.io
 import logging
 from typing import List, Dict
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget,
-    QLabel, QComboBox, QPushButton, QListWidget, QListWidgetItem,
-    QMessageBox, QProgressBar, QTableWidget, QTableWidgetItem,
-    QHeaderView, QSplitter, QTextEdit
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTabWidget,
+    QWidget,
+    QLabel,
+    QComboBox,
+    QPushButton,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QProgressBar,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QSplitter,
+    QTextEdit,
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
@@ -76,13 +89,17 @@ class QaseSyncDialog(QDialog):
 
                 if token and project_code:
                     try:
-                        self.client = QaseClient(api_token=token, project_code=project_code)
+                        self.client = QaseClient(
+                            api_token=token, project_code=project_code
+                        )
                         logger.info("✅ QaseClient инициализирован из credentials")
                     except Exception as e:
                         logger.warning(f"Ошибка инициализации QaseClient: {e}")
                         self.client = None
                 else:
-                    logger.warning("Отсутствуют QASE_API_TOKEN или QASE_PROJECT_CODE в qase.env")
+                    logger.warning(
+                        "Отсутствуют QASE_API_TOKEN или QASE_PROJECT_CODE в qase.env"
+                    )
                     self.client = None
             else:
                 logger.warning("Файл qase.env не найден")
@@ -164,7 +181,9 @@ class QaseSyncDialog(QDialog):
         layout.addWidget(QLabel("<b>Кейсы для импорта:</b>"))
         self.import_cases_table = QTableWidget()
         self.import_cases_table.setColumnCount(4)
-        self.import_cases_table.setHorizontalHeaderLabels(["ID", "Название", "Suite", "Description"])
+        self.import_cases_table.setHorizontalHeaderLabels(
+            ["ID", "Название", "Suite", "Description"]
+        )
         self.import_cases_table.horizontalHeader().setSectionResizeMode(
             1, QHeaderView.ResizeMode.Stretch
         )
@@ -308,8 +327,5 @@ class QaseSyncDialog(QDialog):
 
         logger.info(f"✅ Импортировано {len(cases)} кейсов")
         QMessageBox.information(
-            self,
-            "✅ Успех",
-            f"Импортировано {len(cases)} кейсов из Qase.io"
+            self, "✅ Успех", f"Импортировано {len(cases)} кейсов из Qase.io"
         )
-

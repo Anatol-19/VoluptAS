@@ -31,7 +31,9 @@ class MiniGraphWidget(QWidget):
 
         # Заголовок
         self.title_label = QLabel("Граф связей")
-        self.title_label.setStyleSheet("font-weight: bold; font-size: 11pt; color: #ffffff;")
+        self.title_label.setStyleSheet(
+            "font-weight: bold; font-size: 11pt; color: #ffffff;"
+        )
         layout.addWidget(self.title_label)
 
         # Canvas (тёмный фон как в Obsidian)
@@ -77,7 +79,7 @@ class MiniGraphWidget(QWidget):
             item.id,
             label=item.title,
             type=item.type,
-            color=NODE_COLORS.get(item.type, '#808080'),
+            color=NODE_COLORS.get(item.type, "#808080"),
             size=2000,
             center=True,
         )
@@ -88,11 +90,11 @@ class MiniGraphWidget(QWidget):
                 parent.id,
                 label=parent.title,
                 type=parent.type,
-                color=NODE_COLORS.get(parent.type, '#808080'),
+                color=NODE_COLORS.get(parent.type, "#808080"),
                 size=1500,
                 center=False,
             )
-            G.add_edge(parent.id, item.id, type='parent-of')
+            G.add_edge(parent.id, item.id, type="parent-of")
 
         # Добавляем детей
         for child in children:
@@ -100,11 +102,11 @@ class MiniGraphWidget(QWidget):
                 child.id,
                 label=child.title,
                 type=child.type,
-                color=NODE_COLORS.get(child.type, '#808080'),
+                color=NODE_COLORS.get(child.type, "#808080"),
                 size=1000,
                 center=False,
             )
-            G.add_edge(item.id, child.id, type='parent-of')
+            G.add_edge(item.id, child.id, type="parent-of")
 
         # Рисуем
         self.draw_graph(G, item)
@@ -123,8 +125,8 @@ class MiniGraphWidget(QWidget):
         node_sizes = []
         for node in G.nodes():
             node_data = G.nodes[node]
-            node_colors.append(node_data.get('color', '#808080'))
-            node_sizes.append(node_data.get('size', 1000))
+            node_colors.append(node_data.get("color", "#808080"))
+            node_sizes.append(node_data.get("size", 1000))
 
         # Рисуем узлы
         nx.draw_networkx_nodes(
@@ -145,12 +147,12 @@ class MiniGraphWidget(QWidget):
                 G,
                 pos,
                 edgelist=edges,
-                edge_color='#ffffff',
+                edge_color="#ffffff",
                 width=1.5,
                 alpha=0.6,
                 arrows=True,
                 arrowsize=15,
-                arrowstyle='-|>',
+                arrowstyle="-|>",
                 ax=ax,
             )
 

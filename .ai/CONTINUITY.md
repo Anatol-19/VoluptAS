@@ -69,13 +69,13 @@
   - [x] Текущий статус (v0.3.4, MVP готов, 2 критичных бага)
 
 - [x] **GitHub Copilot (2026-02-20):**
-  - [x] PLAN_001: Qase Integration — ВСЕ 4 ШАГА ЗАВЕРШЕНЫ ✅
-  - [x] Шаг 1: src/integrations/qase.py (QaseClient класс) — 200+ строк
-  - [x] Шаг 2: src/ui/dialogs/settings_dialog.py обновлен (load_all_settings, test_qase_connection)
-  - [x] Шаг 3: src/ui/dialogs/qase_sync_dialog.py создан (316 строк, импорт/экспорт UI)
-  - [x] Шаг 4: main.py интегрирован (меню "Инструменты → Синхронизация → Qase.io")
-  - [x] Тесты: tests/test_qase_integration.py созданы
-  - [x] Все импорты работают: python -c "import qase" ✅
+  - [x] ETAP 1: Code Quality — ✅ ЗАВЕРШЁН
+  - [x] Flake8: 0 критичных ошибок (исправлено 1 F821 в Zoho client)
+  - [x] Black: все файлы отформатированы
+  - [x] Pylint: 0 дублей кода
+  - [x] Структура: PROJECT_TREE.txt создан
+  - [x] Отчёт: docs/CODE_QUALITY_REPORT.md создан
+  - [x] Готовимся к коммиту
 
 ### Now
 - [ ] Готовность к исправлению багов (Next Action)

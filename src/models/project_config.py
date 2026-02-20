@@ -240,43 +240,44 @@ class ProjectManager:
         self.save()
 
         return project
-    
+
     def delete_project(self, project_id: str) -> bool:
         """
         Удаление проекта
-        
+
         Args:
             project_id: ID проекта для удаления
-        
+
         Returns:
             True если успешно
-        
+
         Raises:
             ValueError: если проект не существует или это последний проект
         """
         if project_id not in self.projects:
             raise ValueError(f'Проект с ID "{project_id}" не существует')
-        
+
         # Нельзя удалить последний проект
         if len(self.projects) <= 1:
             raise ValueError("Нельзя удалить последний проект!")
-        
+
         # Нельзя удалить текущий активный проект (нужно сначала переключиться)
         if self.current_project_id == project_id:
             raise ValueError("Сначала переключитесь на другой проект!")
-        
+
         project = self.projects[project_id]
-        
+
         # Удалить папку проекта
         project_dir = Path(project.database_path).parent
         if project_dir.exists():
             import shutil
+
             shutil.rmtree(project_dir)
-        
+
         # Удалить из списка проектов
         del self.projects[project_id]
         self.save()
-        
+
         return True
 
     def get_current_project(self) -> Optional[ProjectConfig]:

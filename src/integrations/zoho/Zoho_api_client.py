@@ -216,7 +216,8 @@ class ZohoAPI:
             if response.status_code == 401:
                 print("🔄 access_token устарел, обновляем...")
                 self.access_token = self.do_access_token()
-                save_tokens(self.access_token, self.refresh_token)
+                # TODO: save_tokens(self.access_token, self.refresh_token)
+                # Note: Token saving should be implemented in settings dialog
 
                 # Повторяем запрос с новым токеном
                 headers = {"Authorization": f"Zoho-oauthtoken {self.access_token}"}
