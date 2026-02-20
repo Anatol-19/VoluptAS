@@ -1,0 +1,130 @@
+FuncID,Alias,Title,Type,Module,Epic,QA,Dev,Segment,Crit,Focus
+ACP,,ACP,Module,,,,,,0,0
+Content,,Content,Module,Content,──┐,,,,0,0
+DCP,,[Epic]: Creators DCP,Epic,FRONT,,Данил,F Фёдор,,0,0
+EasyCancel,,[Epic]: EasyCancel,Epic,VRB WEB,EasyCancel,Анатолий,,,0,0
+FRONT.Account_Managment,,[Epic]: Account Managment,Epic,FRONT,Account Managment,Степан,,,0,0
+FRONT.Auth.Free_Sing_Up,,[Feature]: Free Sign Up,Feature,FRONT,Auth,Анатолий,,UX /CX,0,0
+FRONT.EasyCancel,,[Epic]: Easy Cancel,Epic,FRONT,,,,,0,0
+FRONT.Main_Page,,[Epic]: Main Page,Epic,FRONT,Main Page,Данил,,,0,0
+FRONT.Payments,,[Epic]: Payments,Epic,FRONT,Payments,Анатолий,,,0,0
+FRONT.Slash_Page,,[Epic]: Slash Page,Epic,FRONT,Slash Page,Никита,,,0,0
+FRONT.Slash_Page.Slash_Page_display,,[Feature]: Splash Page,Feature,FRONT,Slash Page,Никита,,UI,0,0
+FRONT.age,,[Epic]: Age Verification,Epic,FRONT,age,Никита,,,0,0
+FRONT.age.age-verification,,[Feature]: Age Verification,Feature,FRONT,age,Никита,,UX /CX,0,0
+FRONT.age.soft_page,,[Feature]: Soft Page,Feature,FRONT,age,Никита,,UX /CX,0,0
+FRONT.favorites,,[Epic]:  Favorites,Epic,FRONT,favorites,Данил,,,0,0
+FRONT.video_player,,[Element]: Video Player,Epic,FRONT,video player,Данил,F Влад,,0,0
+Infra,,Infra,Module,Infra,──┐,,,,0,0
+PLAYA.playa,,[Epic]:  PLAYa,Service,PLAYA,Playa,Максим,,Integration,0,0
+SEO,,[Module]: SEO,Module,SEO,SEO,Максим,,,0,0
+UnZip,,[Module]:  Интеграция с UnZip,Module,UnZip,UnZip,Анатолий,,,0,0
+UnZip.UnZip.Cookies_-,,[Feature]: Добавление куки по кьюверти параметрам,Feature,UnZip,UnZip,Анатолий,,Integration,0,0
+UnZip.UnZip.Передача_статистики,,[Feature]: Пердача UnZip,Feature,UnZip,UnZip,Анатолий,,API,0,0
+UnZip.cookies,,[Feature]: Добавление куки по кьюверти параметрам,Feature,UnZip,UnZip,Анатолий,,Integration,0,0
+UnZip.statistic,,[Feature]: Пердача UnZip,Feature,UnZip,UnZip,Анатолий,,API,0,0
+VRB WEB.Authorization,,[Epic]: Account Authorization,Epic,VRB WEB,Authorization,Степан,,,0,0
+VRB WEB.EasyCancel,,[Epic]: EasyCancel,Epic,VRB WEB,EasyCancel,Анатолий,,,0,0
+account,,[Epic]: Account Managment,Epic,FRONT,Account Managment,Степан,,UX /CX,0,0
+acp.creators_moderations,,ACP Moderations,Epic,ACP,ACP,Степан,,,0,0
+acp.payout_tools,,ACP Payout Tools,Epic,ACP,ACP,Максим,,,0,0
+acp.payout_tools.history,,ACP Payout History,Feature,ACP,ACP,Максим,,,0,0
+acp.payout_tools.to_approve,,ACP to Approve,Feature,ACP,ACP,Максим,,,0,0
+acp.payout_tools.to_pay,,ACP to Pay,Feature,ACP,ACP,Максим,,,0,0
+acp.settings,,ACP Settings,Epic,ACP,ACP,Степан,,,0,0
+acp.statistics,,ACP Statistics,Epic,ACP,ACP,Максим,,,0,0
+age_verif,,[Epic]: Age Verification,Epic,FRONT,age,Никита,,UX /CX,0,0
+age_verif.yoti,,Service: Yoti Integration,Service,YOTI,age,Никита,,Integration,0,0
+catalog.List_view,,[Element]: Catalog - List view,Element,FRONT,,Данил,,UI,0,0
+content.seo,,[Epic]: SEO - Content admin,Epic,SEO,Content,Анатолий,,,0,0
+dreamcam,,[Module]: Dream Cam,Module,DREM CAM,Dream Cam,Степан,B Владимир,,0,0
+email,,[Epic]: EMail,Epic,,EMail,Анатолий,,,0,0
+forum,,[Module]: Forum,Module,Flarum,forum,Степан,B Мария,,0,0
+front,,[Module]: FRONT,Module,FRONT,──┐,,,,0,0
+front.Anounsement,,[Epic]: Announcements Front,Epic,FRONT,Announcements,Никита,B Павел,,0,0
+front.GUI,,"Страницы, элементы фронта",Epic,FRONT,Навигация по фронту,,,,0,0
+front.age_verif,,[Feature]: Age Verification,Feature,FRONT,age,Никита,,UX /CX,0,0
+front.auth.admin,,[Feature]: Admin Login,Feature,FRONT,Auth,Степан,,API,0,0
+front.auth.logout,,[Feature]: Log Out,Feature,FRONT,Auth,,,API,1,1
+front.auth.member.email,,[Feature]: Auth Member by Email,Feature,FRONT,Auth,Степан,,API,0,0
+front.auth.member.username,,[Feature]: Auth Member by Username,Feature,FRONT,Auth,Степан,,API,0,0
+front.auth.refresh_token,,[Feature]: Refresh Token,Feature,FRONT,Auth,Степан,,API,0,0
+front.authorization,,[Epic]: Auth,Epic,FRONT,Auth,Степан,,,0,0
+front.dashboard.DCP,DCP,Dashboard: Creators,Feature,FRONT,Creators DCP,,,,0,0
+front.dashboard.DCP.statistics,,Dashboard: Creator Stats,Feature,FRONT,Creators DCP,Максим,,Workflow,0,0
+front.dashboard.change_email,,[Feature]: Change Email,Feature,FRONT,Account Managment,Степан,,API,0,0
+front.dashboard.change_password,,[Feature]: change password,Feature,FRONT,Account Managment,Степан,,API,0,0
+front.dashboard.change_username,,[Feature]: change username,Feature,FRONT,Account Managment,Степан,,API,0,0
+front.dashboard.easy_cancel,,[Epic]: Easy Cancel,Epic,FRONT,EasyCancel,Анатолий,,UX /CX,0,0
+front.dashboard.easy_cancel.btn,,Easy Cancel btn,Feature,FRONT,EasyCancel,Анатолий,,UX /CX,0,0
+front.dashboard.easy_cancel.cancel,,Easy Cancel - Cancel recurrent,Feature,FRONT,EasyCancel,Анатолий,,API,0,0
+front.dashboard.easy_cancel.questions,,Easy Cancel Вопросы при отмене,Feature,FRONT,EasyCancel,Анатолий,,UX /CX,0,0
+front.dashboard.favorites,,[Epic]:  Favorites,Epic,FRONT,favorites,Данил,,UX /CX,0,0
+front.dashboard.forgot_password,,[Feature]: Fogod password,Feature,FRONT,Account Managment,Степан,,API,0,0
+front.dashboard.unblock,,[Feature]: unblock / block,Feature,FRONT,Account Managment,Степан,,API,0,0
+front.dowload,,[Epic]: Download Video,Epic,FRONT,download_video,Данил,F Александр,,0,0
+front.dreamcam,,[Service]: Dreamcam,Service,DREM CAM,Dream Cam,Степан,,Integration,0,0
+front.dreamcam.transactions,,Token Transactions,Service,FRONT,Dream Cam,Степан,,Integration,0,0
+front.element.ad_banner,,[Feature]: Ad Banner,Feature,FRONT,Announcements,Никита,,UX /CX,0,0
+front.element.announcement_slider,,[Feature]:  Announcement Slider,Feature,FRONT,Announcements,Никита,,UX /CX,0,0
+front.element.comments,,[Element]: Comments,Element,FORUM,forum,Степан,,UI,0,0
+front.element.header_bar,,[Feature]: Header Bar,Feature,FRONT,Announcements,Никита,,UX /CX,0,0
+front.element.value_popup,,[Feature]: Value Pop-Up,Feature,FRONT,Announcements,Никита,,UX /CX,0,0
+front.element.video_player,,[Element]: Video Player,Epic,FRONT,video player,Данил,F Влад,UX /CX,0,0
+front.element.video_player.Delight_XR,,[Feature]:,Feature,FRONT,video player,Данил,,Integration,0,0
+front.element.video_player.UI,,[Feature]:,Element,FRONT,video player,Данил,,UI,0,0
+front.element.video_player.UX,,[Feature]:,Feature,FRONT,video player,Данил,,UX /CX,0,0
+front.notification,,[Epic]: User Notifications,Epic,FRONT,notification,Никита,F Данил,,0,0
+front.notification.DreamCam,,[Feature]:,Service,FRONT,notification,Никита,,Integration,0,0
+front.notification.SO,,[Feature]:,Service,FRONT,notification,Никита,,Logic,0,0
+front.notification.event,,[Feature]:,Service,FRONT,notification,Никита,,Integration,0,0
+front.notification.forum,,[Feature]:,Service,FRONT,notification,Никита,,Integration,0,0
+front.notification.marketing,,[Feature]:,Service,FRONT,notification,Никита,,Logic,0,0
+front.pages.dreamcam,,[Page]: Dreamcam,Page,FRONT,Dream Cam,Степан,,UX /CX,0,0
+front.pages.main,,[Epic]: Main Page,Epic,FRONT,Main Page,Данил,,,0,0
+front.pages.main.UI,,[Page]: Main Page (UI),Page,FRONT,Main Page,Данил,,UI,0,0
+front.pages.main.UX,,[Feature]: Main Page Content,Feature,FRONT,Main Page,Данил,,UX /CX,0,0
+front.pages.premium,,[Page]: Premium Landing Page,Feature,FRONT,Payments,Анатолий,,UX /CX,0,0
+front.pages.premium.UI,,[Page]: Premium Landing Page (UI),Page,FRONT,Payments,Анатолий,,UI,0,0
+front.pages.soft_page,,[Page]: Soft Page,Page,FRONT,age,Никита,,UI,0,0
+front.payments.buy_tokens,,[Feature]: Buy Tokens,Feature,FRONT,Payments,Анатолий,,UX /CX,0,0
+front.payments.buy_tokens.UI,,[Page]: Buy Tokens (UI),Page,FRONT,Payments,Анатолий,,UI,0,0
+front.payments.premium,,[Feature]: Join Now - Premium,Feature,FRONT,Payments,Анатолий,,UX /CX,0,0
+front.search,,[Epic]: Поиск контента,Epic,FRONT,Search,Данил,D Сергей,,0,0
+front.search.quick,,[Element]: Search Pop up,Element,FRONT,,Данил,,UI,0,0
+front.seo,,[Module]: SEO,Module,SEO,SEO,Максим,,Perfom,0,0
+front.services.forum,,[Service]: Flarum,Service,FORUM,forum,Степан,,Integration,0,0
+front.singup,,[Feature]: Free Sign Up,Feature,FRONT,Auth,Анатолий,,UX /CX,0,0
+front.soft_page,,[Feature]: Soft Page,Feature,FRONT,age,Никита,,UX /CX,0,0
+front.splash_page,,[Feature]: Splash Page,Feature,FRONT,Slash Page,Никита,,UI,0,0
+front.splash_page.cookies,,[Feature]: Age cookies,Feature,FRONT,Slash Page,Никита,,Perfom,0,0
+page.404,,[Page]: 404,Page,FRONT,,,,,0,0
+page.Maintenance,,[Page]: Maintenance,Page,FRONT,,Данил,,,0,0
+page.catalogs.DreamCam,,[Page]: Vr Cams - Catalog,Page,FRONT,,,,,0,0
+page.catalogs.all_video,,[Page]: All VR Video (All / New),Page,FRONT,,,,,0,0
+page.catalogs.categories,,[Page]: Categories,Page,FRONT,,,,,0,0
+page.catalogs.pornstars,,[Page]: Pornstars,Page,FRONT,,,,,0,0
+page.catalogs.studios,,[Page]: Studios,Page,FRONT,,,,,0,0
+page.dashboard,,[Page]: Dashboard,Page,FRONT,,,,,0,0
+page.forms,,[Page]: Forms pages,Page,FRONT,,Степан,,,0,0
+page.main,,[Page]: Main,Page,FRONT,,,,,0,0
+page.single.category,,[Page]: Single Category,Page,FRONT,,,,,0,0
+page.single.model,,[Page]: Single model,Page,FRONT,,,,,0,0
+page.single.sections,,[Page]: Gay -Trans - Fmail POV,Page,FRONT,,,,,0,0
+page.single.steam,,[Page]: Vr Cams - Steam,Page,FRONT,,,,,0,0
+page.single.studio,,[Page]: Single studio,Page,FRONT,,,,,0,0
+page.single.video,,[Page]: Single video,Page,FRONT,,,,,0,0
+page.soft,,[Page]: Soft,Page,FRONT,,,,,0,0
+page.splash,,[Page]: Splash,Page,FRONT,,,,,0,0
+page.static,,[Page]: Static page,Page,FRONT,,,,,0,0
+page.text,,[Page]: Text pages,Page,FRONT,,,,,0,0
+payments,,[Epic]: Payments,Epic,FRONT,Payments,Анатолий,,,0,0
+payments.billers.epoch,,Payments: Epoch,Service,VRB WEB,Epoch,Анатолий,,Integration,0,0
+playa,,[Epic]:  PLAYa,Service,PLAYA,Playa,Максим,,Integration,0,0
+search.page,,[Page]: Search result,Page,FRONT,,Данил,,UI,0,0
+splash_page,,[Epic]: Slash Page,Epic,FRONT,Slash Page,Никита,,UX /CX,0,0
+vrb_web,,[Module]: VRB WEB,Module,VRB WEB,──┐,,,,0,0
+vrb_web.account.authorization,,[Epic]: Account Authorization,Epic,VRB WEB,Authorization,Степан,,API,0,0
+vrb_web.account.jwt,,Account JWT Auth,Feature,VRB WEB,Authorization,Степан,,API,0,0
+vrb_web.drop_carts,,[Service]: Drop Carts,Service,VRB WEB,EMail,Анатолий,,Workflow,0,0
+vrb_web.email.drop_carts,,[Feature]: Emails: Drop Carts,Feature,VRB WEB,EMail,Анатолий,,API,0,0

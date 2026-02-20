@@ -117,13 +117,14 @@ class DynamicEditDialog(QDialog):
         self.item = item
         self.session = session
         self.is_new = not hasattr(item, 'id') or item.id is None
+        self.parent_widget = parent  # Сохраняем для диалогов
         self.setWindowTitle(f'Редактирование: {item.functional_id}' if not self.is_new else 'Новая сущность')
         self.setMinimumWidth(700)
         self.setMinimumHeight(600)
-        
+
         # Виджеты для полей
         self.field_widgets = {}
-        
+
         self.init_ui()
     
     def init_ui(self):
@@ -211,8 +212,37 @@ class DynamicEditDialog(QDialog):
         self.is_focus_check = QCheckBox()
         self.is_focus_check.setChecked(bool(self.item.is_focus))
         basic_layout.addRow('Is Focus:', self.is_focus_check)
-        
+
         tabs.addTab(basic_tab, '📋 Основные')
+        
+        # Кнопки создания дочерних элементов (если элемент не новый)
+        if not self.is_new and self.item.type:
+            child_buttons_widget = QWidget()
+            child_buttons_layout = QHBoxLayout(child_buttons_widget)
+            child_buttons_layout.addWidget(QLabel('<b>➕ Создать дочерний:</b>'))
+            
+            # Определяем подходящие типы дочерних
+            child_types = {
+                'Module': ['Epic'],
+                'Epic': ['Feature'],
+                'Feature': ['Story', 'Page', 'Element'],
+                'Story': ['Element'],
+                'Page': ['Element'],
+                'Service': [],
+                'Element': [],
+            }
+            
+            for child_type in child_types.get(self.item.type, []):
+                btn = QPushButton(f'{child_type}')
+                btn.setStyleSheet('background: #e0e0e0; padding: 5px 10px;')
+                btn.clicked.connect(lambda checked, t=child_type: self.create_child_from_editor(t))
+                child_buttons_layout.addWidget(btn)
+            
+            if not child_types.get(self.item.type, []):
+                child_buttons_layout.addWidget(QLabel('(нет дочерних типов)'))
+            
+            child_buttons_layout.addStretch()
+            tabs.addTab(child_buttons_widget, '👶 Дочерние')
         
         # Вкладка 2: Ответственные
         responsible_tab = QWidget()
@@ -467,19 +497,79 @@ class DynamicEditDialog(QDialog):
         # Применяем конфигурацию для текущего типа
         self.on_type_changed(self.type_combo.currentText())
     
-    def populate_combo(self, combo, field_name):
-        """Заполняет комбобокс уникальными значениями из БД"""
+    def populate_combo(self, combo, field_name, allow_create=True):
+        """Заполняет комбобокс значениями из СУЩНОСТЕЙ соответствующего типа"""
+        combo.clear()
         combo.addItem('')
-        query = self.session.query(getattr(FunctionalItem, field_name)).filter(
-            getattr(FunctionalItem, field_name).isnot(None)
-        ).distinct().order_by(getattr(FunctionalItem, field_name))
         
+        # Маппинг поля к типу сущности
+        field_to_type = {
+            'module': 'Module',
+            'epic': 'Epic',
+            'feature': 'Feature',
+            'story': 'Story',
+            'page': 'Page',
+        }
+        
+        entity_type = field_to_type.get(field_name)
+        
+        if entity_type:
+            # Берём Title сущностей соответствующего типа
+            query = self.session.query(FunctionalItem.title).filter(
+                FunctionalItem.type == entity_type
+            ).order_by(FunctionalItem.title)
+        else:
+            # Старое поведение для остальных полей
+            query = self.session.query(getattr(FunctionalItem, field_name)).filter(
+                getattr(FunctionalItem, field_name).isnot(None)
+            ).distinct().order_by(getattr(FunctionalItem, field_name))
+
         values = [v[0] for v in query.all()]
         combo.addItems(values)
         
+        # Добавляем "[+ Create new]" если разрешено
+        if allow_create:
+            combo.insertSeparator(values.count() + 1)
+            combo.addItem(f'[+ Create new {entity_type or field_name.title()}...]')
+
         current_value = getattr(self.item, field_name)
         if current_value:
             combo.setCurrentText(current_value)
+        
+        # Подключаем обработчик выбора
+        if allow_create:
+            combo.currentTextChanged.connect(lambda text: self.on_combo_selected(text, field_name, entity_type))
+    
+    def on_combo_selected(self, text, field_name, entity_type):
+        """Обработка выбора '[+ Create new...]'"""
+        if not text or not text.startswith('[+ Create'):
+            return
+        
+        # Сбрасываем выбор
+        combo = getattr(self, f'{field_name}_combo', None)
+        if combo:
+            combo.setCurrentIndex(0)
+        
+        # Открываем диалог создания новой сущности
+        from src.models import FunctionalItem
+        new_entity = FunctionalItem(
+            title='',
+            type=entity_type,
+        )
+        
+        dialog = DynamicEditDialog(new_entity, self.session, self.parent_widget)
+        if dialog.exec():
+            try:
+                self.session.add(new_entity)
+                self.session.commit()
+                
+                # Обновляем комбобокс и выбираем созданное
+                self.populate_combo(combo, field_name)
+                combo.setCurrentText(new_entity.title)
+                
+            except Exception as e:
+                self.session.rollback()
+                QMessageBox.critical(self.parent_widget, 'Ошибка', f'Не удалось создать:\n{e}')
     
     def on_type_changed(self, item_type):
         """Показывает/скрывает поля в зависимости от типа"""
@@ -735,6 +825,65 @@ class DynamicEditDialog(QDialog):
                 self, 'Успех',
                 f'✅ Элемент создан\nFuncID: {self.item.functional_id}'
             )
+    
+    def create_child_from_editor(self, child_type):
+        """Создание дочернего элемента из редактора"""
+        # Создаём новый элемент с иерархией от текущего
+        new_item = FunctionalItem()
+        
+        # Устанавливаем иерархию и parent_id
+        if self.item.type == 'Module':
+            new_item.module = self.item.title
+            new_item.parent_id = self.item.id
+        elif self.item.type == 'Epic':
+            new_item.module = self.item.module
+            new_item.epic = self.item.title
+            new_item.parent_id = self.item.id
+        elif self.item.type == 'Feature':
+            new_item.module = self.item.module
+            new_item.epic = self.item.epic
+            new_item.feature = self.item.title
+            new_item.parent_id = self.item.id
+        elif self.item.type == 'Story':
+            new_item.module = self.item.module
+            new_item.epic = self.item.epic
+            new_item.feature = self.item.feature
+            new_item.story = self.item.title
+            new_item.parent_id = self.item.id
+        elif self.item.type == 'Page':
+            new_item.module = self.item.module
+            new_item.epic = self.item.epic
+            new_item.feature = self.item.feature
+            new_item.page = self.item.title
+            new_item.parent_id = self.item.id
+        
+        # Устанавливаем тип
+        new_item.type = child_type
+        
+        # Авто-сегмент
+        segment_map = {
+            'Story': 'UX/CX',
+            'Page': 'UI',
+            'Element': 'UI',
+            'Feature': 'Backend',
+        }
+        new_item.segment = segment_map.get(child_type, '')
+        
+        # Открываем редактор
+        dialog = DynamicEditDialog(new_item, self.session, self.parent_widget)
+        if dialog.exec():
+            try:
+                self.session.add(new_item)
+                self.session.commit()
+                self.accept()  # Закрываем текущий редактор
+                self.parent_widget.load_data()  # Обновляем таблицу
+                QMessageBox.information(
+                    self.parent_widget, 'Успех',
+                    f'✅ Создан {child_type}: {new_item.functional_id}'
+                )
+            except Exception as e:
+                self.session.rollback()
+                QMessageBox.critical(self.parent_widget, 'Ошибка', f'Не удалось создать:\n{e}')
 
 
 # === РЕДАКТОР СУЩНОСТЕЙ ПО ТИПАМ ===
@@ -1845,28 +1994,55 @@ class MainWindow(QMainWindow):
         menu.exec(self.table.viewport().mapToGlobal(position))
     
     def create_child_item(self, parent_row, child_type):
-        """Создание дочернего элемента"""
+        """Создание дочернего элемента с авто-FuncID и связями"""
         parent_funcid = self.table.item(parent_row, 0).text()
         parent_item = self.session.query(FunctionalItem).filter_by(functional_id=parent_funcid).first()
         
         if not parent_item:
             return
         
-        # Создаём новый элемент с родителем
+        # Создаём новый элемент
         new_item = FunctionalItem()
         
-        # Устанавливаем иерархию
+        # Устанавливаем иерархию и parent_id
         if parent_item.type == 'Module':
             new_item.module = parent_item.title
+            new_item.parent_id = parent_item.id
         elif parent_item.type == 'Epic':
             new_item.module = parent_item.module
             new_item.epic = parent_item.title
+            new_item.parent_id = parent_item.id
         elif parent_item.type == 'Feature':
             new_item.module = parent_item.module
             new_item.epic = parent_item.epic
             new_item.feature = parent_item.title
+            new_item.parent_id = parent_item.id
+        elif parent_item.type == 'Story':
+            new_item.module = parent_item.module
+            new_item.epic = parent_item.epic
+            new_item.feature = parent_item.feature
+            new_item.story = parent_item.title
+            new_item.parent_id = parent_item.id
+        elif parent_item.type == 'Page':
+            new_item.module = parent_item.module
+            new_item.epic = parent_item.epic
+            new_item.feature = parent_item.feature
+            new_item.page = parent_item.title
+            new_item.parent_id = parent_item.id
         
-        # Открываем редактор
+        # Устанавливаем тип
+        new_item.type = child_type
+        
+        # Авто-сегмент в зависимости от типа дочернего
+        segment_map = {
+            'Story': 'UX/CX',
+            'Page': 'UI',
+            'Element': 'UI',
+            'Feature': 'Backend',
+        }
+        new_item.segment = segment_map.get(child_type, '')
+        
+        # Открываем редактор (FuncID сгенерируется при сохранении)
         dialog = DynamicEditDialog(new_item, self.session, self)
         if dialog.exec():
             try:
