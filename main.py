@@ -5,6 +5,9 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent
 sys.path.insert(0, str(project_root))
 
+# Импорт утилит
+from src.utils.funcid_generator import generate_funcid, make_unique_funcid, suggest_children
+
 # Настройка логирования с ротацией
 log_dir = project_root / 'logs'
 log_dir.mkdir(exist_ok=True)
@@ -585,14 +588,41 @@ class DynamicEditDialog(QDialog):
                 QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
     
     def save(self):
-        """Сохранение с валидацией"""
+        """Сохранение с валидацией и авто-генерацией FuncID"""
         # Валидация обязательных полей
-        if not self.functional_id_edit.text().strip():
-            QMessageBox.warning(self, 'Ошибка', 'Functional ID обязателен')
-            return
-        
         if not self.title_edit.text().strip():
             QMessageBox.warning(self, 'Ошибка', 'Title обязателен')
+            return
+        
+        # Авто-генерация FuncID для новых элементов
+        if self.is_new:
+            title = self.title_edit.text().strip()
+            item_type = self.type_combo.currentText()
+            
+            # Получаем иерархию из полей
+            module = self.module_combo.currentText().strip() if hasattr(self, 'module_combo') else None
+            epic = self.epic_combo.currentText().strip() if hasattr(self, 'epic_combo') else None
+            feature = self.feature_combo.currentText().strip() if hasattr(self, 'feature_combo') else None
+            
+            # Генерируем FuncID
+            generated_funcid = generate_funcid(
+                item_type=item_type,
+                title=title,
+                module=module,
+                epic=epic,
+                feature=feature
+            )
+            
+            # Делаем уникальным
+            unique_funcid = make_unique_funcid(generated_funcid, self.session)
+            
+            # Устанавливаем в поле (только если поле было пустое)
+            if not self.functional_id_edit.text().strip():
+                self.functional_id_edit.setText(unique_funcid)
+        
+        # Валидация FuncID
+        if not self.functional_id_edit.text().strip():
+            QMessageBox.warning(self, 'Ошибка', 'Functional ID обязателен')
             return
         
         qa_name = self.qa_combo.currentText().strip()
@@ -692,7 +722,19 @@ class DynamicEditDialog(QDialog):
         if hasattr(self, 'custom_fields_edit'):
             self.item.custom_fields = self.custom_fields_edit.toPlainText().strip() or None
         
+        # Сохраняем в БД
+        self.session.add(self.item)
+        self.session.commit()
+        
+        # Сигнал об успешном сохранении (для обновления выпадающих списков)
         self.accept()
+        
+        # Показывем уведомление
+        if self.is_new:
+            QMessageBox.information(
+                self, 'Успех',
+                f'✅ Элемент создан\nFuncID: {self.item.functional_id}'
+            )
 
 
 # === РЕДАКТОР СУЩНОСТЕЙ ПО ТИПАМ ===
@@ -1569,7 +1611,8 @@ class MainWindow(QMainWindow):
             self.table.setRowHidden(row, not show)
     
     def add_item(self):
-        new_item = FunctionalItem(functional_id='new.item', title='Новый элемент', type='Feature')
+        """Добавление нового элемента"""
+        new_item = FunctionalItem()
         dialog = DynamicEditDialog(new_item, self.session, self)
         if dialog.exec():
             try:
@@ -1580,26 +1623,27 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.session.rollback()
                 QMessageBox.critical(self, 'Ошибка', f'Не удалось добавить:\n{e}')
-    
+
     def edit_item(self):
+        """Редактирование выбранного элемента"""
         selected = self.table.currentRow()
         if selected < 0:
             QMessageBox.warning(self, 'Внимание', 'Выберите элемент')
             return
-        
+
         functional_id = self.table.item(selected, 0).text()
         item = self.session.query(FunctionalItem).filter_by(functional_id=functional_id).first()
-        
+
         if item:
             dialog = DynamicEditDialog(item, self.session, self)
             if dialog.exec():
                 try:
                     self.session.commit()
                     self.load_data()
-                    self.statusBar().showMessage(f'✅ Сохранено: {item.functional_id}')
+                    self.statusBar().showMessage(f'✅ Обновлён: {item.functional_id}')
                 except Exception as e:
                     self.session.rollback()
-                    QMessageBox.critical(self, 'Ошибка', f'Не удалось сохранить:\n{e}')
+                    QMessageBox.critical(self, 'Ошибка', f'Не удалось обновить:\n{e}')
     
     def delete_item(self):
         selected = self.table.currentRow()

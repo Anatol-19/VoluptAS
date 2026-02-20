@@ -14,5 +14,21 @@
       "restored"
     ],
     "custom_fields": {}
+  },
+  "sandbox": {
+    "id": "sandbox",
+    "name": "Sandbox",
+    "description": "Sandbox",
+    "database_path": "C:\\ITS_QA\\VoluptAS\\data\\projects\\sandbox\\sandbox.db",
+    "bdd_features_dir": "C:\\ITS_QA\\VoluptAS\\data\\projects\\sandbox\\bdd_features",
+    "reports_dir": "C:\\ITS_QA\\VoluptAS\\data\\projects\\sandbox\\reports",
+    "settings_profile": "sandbox",
+    "created_at": "2026-02-20T12:12:49.552453",
+    "last_used": "2026-02-20T12:12:52.755175",
+    "is_active": true,
+    "tags": [
+      "Sandbox"
+    ],
+    "custom_fields": {}
   }
 }
